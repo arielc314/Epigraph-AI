@@ -1,0 +1,80 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom RTL Support */
+[dir="rtl"] {
+  direction: rtl;
+}
+
+/* Custom scrollbar for better UX */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #d97706;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #b45309;
+}
+
+/* Animation for smooth transitions */
+* {
+  transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+}
+
+/* Focus styles for accessibility */
+button:focus,
+input:focus,
+textarea:focus {
+  outline: 2px solid #d97706;
+  outline-offset: 2px;
+}
+
+/* Custom button hover effects */
+.btn-archaeological {
+  @apply bg-gradient-to-r from-amber-600 to-yellow-600 text-white font-semibold py-2 px-4 rounded-lg;
+  @apply hover:from-amber-700 hover:to-yellow-700 transform hover:scale-105;
+  @apply transition-all duration-200 shadow-lg;
+}
+
+/* File input styling */
+input[type="file"] {
+  @apply sr-only;
+}
+
+/* Custom archaeological theme colors */
+.bg-archaeological-primary {
+  background: linear-gradient(135deg, #d97706 0%, #f59e0b 100%);
+}
+
+.text-archaeological-primary {
+  color: #d97706;
+}
+
+/* Mobile responsive adjustments */
+@media (max-width: 768px) {
+  .container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  /* Ensure proper spacing on mobile */
+  .mobile-spacing {
+    margin-bottom: 1rem;
+  }
+}
+
+/* Print styles */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+}

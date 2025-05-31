@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xmlns="http://www.tei-c.org/ns/1.0">
+	<teiHeader>
+		<fileDesc>
+			<titleStmt>
+				<title>HS.1853</title>
+			</titleStmt>
+			<publicationStmt>
+				<p>Frau Professor Hilprecht Collection of Babylonian Antiquities</p>
+				<p> Collection</p>
+			</publicationStmt>
+			<sourceDesc>
+				<p>
+			</p>
+		</sourceDesc>
+	</fileDesc>
+</teiHeader>
+<text>
+	<body>
+		<lg>
+			<note>obverse</note>
+			<l n="HS.1853.1′">
+				<w>%sux</w>
+				<w>[...]</w>
+				<w>x</w>
+				<w>anše?#</w>
+				<w>x-am₃#</w>
+			</l>
+			<l n="HS.1853.2′">
+				<w>%sux</w>
+				<w>[...]</w>
+				<w>x-e</w>
+				<w>ab₂-am₃</w>
+				<w>gu₃</w>
+				<w>im-me</w>
+			</l>
+			<l n="HS.1853.3′">
+				<w>%sux</w>
+				<w>[...]-ta#</w>
+				<w>ĝa₂-nu</w>
+				<w>peš₁₀-ta</w>
+				<w>ĝa₂-nu</w>
+			</l>
+			<note>$ end of side</note>
+		</lg>
+		<lg>
+			<note>reverse</note>
+			<l n="HS.1853.1">
+				<w>%sux</w>
+				<w>[...-n]e?</w>
+				<w>peš₁₀-ta</w>
+				<w>ĝa₂-nu</w>
+				<w>al#-lu₅!?#-gin₇</w>
+				<w>id₂-da!?#</w>
+				<w>ĝa₂-nu</w>
+			</l>
+			<l n="HS.1853.2">
+				<w>%sux</w>
+				<w>[...]-gi₄-gi₄-de₃-en</w>
+				<w>ma-ra-an-gi₄-gi₄-de₃!?-en</w>
+			</l>
+			<l n="HS.1853.3">
+				<w>%sux</w>
+				<w>[...-g]al?</w>
+				<w>ma-ra-gi₄-gi₄-de₃-en</w>
+			</l>
+			<l n="HS.1853.4">
+				<w>%sux</w>
+				<w>[...]</w>
+				<w>ma-ra-gi₄-gi₄-de₃-en</w>
+			</l>
+			<l n="HS.1853.5">
+				<w>%sux</w>
+				<w>[...]</w>
+				<w>x</w>
+				<w>{u₂?}gug₄?-e</w>
+			</l>
+			<l n="HS.1853.6">
+				<w>%sux</w>
+				<w>[...]</w>
+				<w>x</w>
+				<w>x</w>
+				<w>x-ze₂-x</w>
+			</l>
+			<l n="HS.1853.7">
+				<w>%sux</w>
+				<w>[...]</w>
+				<w>x</w>
+			</l>
+			<note>$ rest of side broken</note>
+		</lg>
+		<lg>
+			<note>bottom</note>
+			<l n="HS.1853.1">
+				<w>($___$)</w>
+				<w>x</w>
+				<w>x</w>
+				<w>x</w>
+			</l>
+			<note>$ end of side</note>
+		</lg>
+		<note>compare Lisin Lament, CBS.1687 face 1&apos;?</note>
+	</body>
+</text>
+</TEI>

@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xmlns="http://www.tei-c.org/ns/1.0">
+	<teiHeader>
+		<fileDesc>
+			<titleStmt>
+				<title>U.7011</title>
+			</titleStmt>
+			<publicationStmt>
+				<p>The Iraq Museum</p>
+				<p> Collection</p>
+			</publicationStmt>
+			<sourceDesc>
+				<p>
+			</p>
+		</sourceDesc>
+	</fileDesc>
+</teiHeader>
+<text>
+	<body>
+		<lg>
+			<note>$ obverse</note>
+			<l n="U.7011.1">
+				<w>%sux</w>
+				<w>63.0.0</w>
+				<w>še</w>
+				<w>gur</w>
+				<w>maš</w>
+				<w>ĝa₂-ĝa₂;-de₃</w>
+			</l>
+			<l>#tr.en.(3): Ilī-ṣillī has received 63 @i{gur} of barley (18,900 L) with interest to be added.</l>
+			<l n="U.7011.2">
+				<w>%sux</w>
+				<w>i₃-li₂-zi-li₂</w>
+			</l>
+			<l n="U.7011.3">
+				<w>%sux</w>
+				<w>šu</w>
+				<w>ba-ti</w>
+			</l>
+			<l n="U.7011.4">
+				<w>%sux</w>
+				<w>{m}ba-ti-mu</w>
+			</l>
+			<l>#tr.en.(6): Batimu and Ibukum will confirm it.</l>
+			<l n="U.7011.5">
+				<w>%sux</w>
+				<w>u₃</w>
+				<w>i-bu-ku-um</w>
+			</l>
+			<l n="U.7011.6">
+				<w>%sux</w>
+				<w>ib₂-ge-ne₂;-ne</w>
+			</l>
+			<note>$ reverse</note>
+			<l n="U.7011.7">
+				<w>%sux</w>
+				<w>[...]</w>
+				<w>GI</w>
+				<w>TUR</w>
+			</l>
+			<l n="U.7011.8">
+				<w>%sux</w>
+				<w>...</w>
+			</l>
+		</lg>
+		<lg>
+			<note>date</note>
+			<l n="U.7011.9">
+				<w>%sux</w>
+				<w>mu</w>
+				<w>us₂-sa</w>
+				<w>an-ša-an{ki}</w>
+				<w>|</w>
+				<w>[ba-hulu]</w>
+			</l>
+			<l>#tr.en: Year after the year Anshan was destroyed (Š 35)</l>
+		</lg>
+	</body>
+</text>
+</TEI>

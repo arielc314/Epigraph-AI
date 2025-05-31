@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xmlns="http://www.tei-c.org/ns/1.0">
+	<teiHeader>
+		<fileDesc>
+			<titleStmt>
+				<title>K.10481</title>
+			</titleStmt>
+			<publicationStmt>
+				<p>The British Museum</p>
+				<p>Kuyunjik Collection</p>
+			</publicationStmt>
+			<sourceDesc>
+				<p>Fragment of a clay tablet, 6 lines of inscription. Neo-Assyrian.</p>
+			</sourceDesc>
+		</fileDesc>
+	</teiHeader>
+	<text>
+		<body>
+			<lg>
+				<note>$ single ruling</note>
+				<l n="K.10481.1′">
+					<w>[...</w>
+					<w>ME]Š-šu₂</w>
+					<w>[...]</w>
+				</l>
+				<l n="K.10481.2′">
+					<w>[...]</w>
+					<w>NU</w>
+					<w>TUK</w>
+					<w>NIG₂.HA.LAM.[MA</w>
+					<w>...]</w>
+				</l>
+				<l n="K.10481.3′">
+					<w>[...]</w>
+					<w>UMUŠ</w>
+					<w>KUR</w>
+					<w>[...]</w>
+				</l>
+				<l n="K.10481.4′">
+					<w>[...</w>
+					<w>u]š-qa-lal</w>
+					<w>TUR₃</w>
+					<w>[...]</w>
+				</l>
+				<l n="K.10481.5′">
+					<w>[...]</w>
+					<w>x</w>
+					<w>TI-qi₂-ma</w>
+					<w>DAM-s[u</w>
+					<w>...]</w>
+				</l>
+				<l n="K.10481.6′">
+					<w>[...]</w>
+					<w>x</w>
+					<w>NU</w>
+					<w>TUR₃</w>
+					<w>IGI-MEŠ</w>
+					<w>[...]</w>
+				</l>
+				<l n="K.10481.7′">
+					<w>[...]</w>
+					<w>x</w>
+					<w>[...]</w>
+				</l>
+			</lg>
+			<note>joins K.6404+, Izbu 19 Ms. A, REPAC [ES]</note>
+		</body>
+	</text>
+</TEI>

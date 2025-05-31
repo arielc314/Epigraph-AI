@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xmlns="http://www.tei-c.org/ns/1.0">
+	<teiHeader>
+		<fileDesc>
+			<titleStmt>
+				<title>K.10485</title>
+			</titleStmt>
+			<publicationStmt>
+				<p>The British Museum</p>
+				<p>Kuyunjik Collection</p>
+			</publicationStmt>
+			<sourceDesc>
+				<p>Fragment of a clay tablet, 3 columns of inscription. Neo-Assyrian.</p>
+				<p>Publication: Codex Hammurapi K 10485</p>
+			</sourceDesc>
+		</fileDesc>
+	</teiHeader>
+	<text>
+		<body>
+			<lg>
+				<note>reverse</note>
+				<note>column 1&apos;</note>
+				<l n="K.10485.1′">
+					<w lemma="ana I">a#-[na?</w>
+					<w>...]</w>
+				</l>
+				<l n="K.10485.2′">
+					<w>i-si/šak#/dir#-[...]</w>
+				</l>
+				<l n="K.10485.3′">
+					<w lemma="kīma I">ki-ma</w>
+					<w>[...]</w>
+				</l>
+				<l n="K.10485.4′">
+					<w>ma?#-[...]</w>
+				</l>
+				<l>#note: CH §aa, from the lost columns</l>
+			</lg>
+			<lg>
+				<note>column 2&apos;</note>
+				<l n="K.10485.1′">
+					<w>ŠAMAN₂.[LA₂</w>
+					<w lemma="kaspu I">KU₃.BABBAR]</w>
+				</l>
+				<l>#note: // CH col. 24 (= rev. 1) 38</l>
+				<l n="K.10485.2′">
+					<w>i-s[a]-ad#-[dar-ma]</w>
+				</l>
+				<l>#note: // CH col. 24 (= rev. 1) 39</l>
+				<l n="K.10485.3′">
+					<w lemma="ana I">a-na</w>
+					<w lemma="tamkāru I">DAM.GAR₃</w>
+					<w>u₂-ta#-[ar]</w>
+				</l>
+				<l>#note: // CH col. 24 (= rev. 1) 40-41</l>
+				<l n="K.10485.4′">
+					<w>ŠAMAN₂.LA₂</w>
+					<w>ka-ni-ik</w>
+					<w lemma="kaspu I">KU₃#.[BABBAR]</w>
+				</l>
+				<l>#note: // CH col. 24 (= rev. 1) 42</l>
+				<l n="K.10485.5′">
+					<w lemma="ša I">ša</w>
+					<w lemma="ana I">a-na</w>
+					<w lemma="tamkāru I">DAM.GAR₃</w>
+				</l>
+				<l>#note: // CH col. 24 (= rev. 1) 43</l>
+				<l n="K.10485.6′">
+					<w>i-na-ad-di-nu</w>
+				</l>
+				<l>#note: // CH col. 24 (= rev. 1) 44</l>
+				<l n="K.10485.7′">
+					<w>i-le-eq-&lt;qe₂&gt;</w>
+				</l>
+				<l>#note: // CH col. 24 (= rev. 1) 45 has i-le-qe₂; CH §104</l>
+				<l n="K.10485.8′">
+					<w lemma="šumma I">šum-ma</w>
+					<w>ŠAMAN₂.LA₂</w>
+				</l>
+				<l>#note: // CH col. 24 (= rev. 1) 46</l>
+				<l n="K.10485.9′">
+					<w>i#-te-gi-ma</w>
+				</l>
+				<l>#note: // CH col. 24 (= rev. 1) 47</l>
+				<l n="K.10485.10′">
+					<w>[ka-ni]-ik#</w>
+					<w lemma="kaspu I">KU₃.BABBAR#</w>
+				</l>
+				<l>#note: // CH col. 24 (= rev. 1) 48</l>
+				<l n="K.10485.11′">
+					<w lemma="ša I">[ša</w>
+					<w lemma="ana I">a-na]</w>
+					<w lemma="tamkāru I">DAM#.[GAR₃]</w>
+				</l>
+				<l>#note: // CH col. 24 (= rev. 1) 49; CH §105</l>
+			</lg>
+			<lg>
+				<note>column 3&apos;</note>
+				<l n="K.10485.1′">
+					<w>[a-wi-lum</w>
+					<w lemma="šū I">šu]-u₂#</w>
+				</l>
+				<l>#note: // CH col. 25 (= rev. 2) 59</l>
+				<l n="K.10485.2′">
+					<w lemma="mimma I">[mi-im-ma</w>
+					<w lemma="ša I">ša]</w>
+					<w>šu#-bu-lu</w>
+				</l>
+				<l>#note: // CH col. 25 (= rev. 2) 60</l>
+				<l n="K.10485.3′">
+					<w lemma="ašru III">[a-šar]</w>
+					<w>šu-bu-lu</w>
+				</l>
+				<l>#note: // CH col. 25 (= rev. 2) 61</l>
+				<l n="K.10485.4′">
+					<w>[la</w>
+					<w>id-di-in-m]a</w>
+					<w lemma="tabālu I">it-bal</w>
+				</l>
+				<l>#note: // CH col. 25 (= rev. 2) 62-63 has la id-&lt;di&gt;-in-ma it-ba-al</l>
+				<l n="K.10485.5′">
+					<w lemma="bēlu I">[be-el</w>
+					<w>ši-bu-u]l-tim</w>
+				</l>
+				<l>#note: // CH col. 25 (= rev. 2) 64</l>
+				<l n="K.10485.6′">
+					<w lemma="awīlu I">[a-wi-lam</w>
+					<w lemma="šuāti I">šu]-a#-ti</w>
+				</l>
+				<l>#note: // CH col. 25 (= rev. 2) 65</l>
+				<l n="K.10485.7′">
+					<w>[i-na</w>
+					<w lemma="mimma I">mi-im]-ma#</w>
+				</l>
+				<l>#note: // CH col. 25 (= rev. 2) 66; CH §112</l>
+			</lg>
+			<note>CH §§aa, 104-105, 112</note>
+		</body>
+	</text>
+</TEI>
