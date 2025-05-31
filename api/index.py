@@ -17,8 +17,8 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 active_requests = {}
 
 try:
-    from controller import extract_transliteration  # Local file
-    from gemini import init_model                   # Local file
+    from src.server.controller import extract_transliteration  # Local file
+    from src.server.gemini import init_model                   # Local file
     print("✅ Successfully imported modules")
 except ImportError as e:
     print(f"⚠️ Import error: {e}")
