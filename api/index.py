@@ -534,6 +534,19 @@ def health_check():
         "server": "Epigraph-AI Backend v2.1 - Early Preview Edition"
     })
 
+@app.route("/", methods=['GET'])
+def home():
+    """Root endpoint"""
+    return jsonify({
+        "message": "Epigraph-AI API is running",
+        "version": "2.1",
+        "endpoints": {
+            "query": "/api/query",
+            "health": "/api/health",
+            "cancel": "/api/cancel/<request_id>"
+        }
+    })
+
 if __name__ == '__main__':
     print("🚀 Starting Enhanced Epigraph-AI server with IMMEDIATE preview...")
     print("📍 Server will run on http://127.0.0.1:5328")

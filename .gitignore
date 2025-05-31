@@ -46,7 +46,6 @@ dist/
 
 # Credentials (keep safe!)
 **/cardentials.json
-**/credentials.json
 
 # Build cache
 *.tsbuildinfo
