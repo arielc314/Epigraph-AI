@@ -1,5 +1,5 @@
 import google.generativeai as genai
-import google.auth
+from google.oauth2 import service_account
 
 
 class Gemini:
@@ -55,7 +55,8 @@ class Gemini:
                 raise ValueError("Service account file path is not set. Please set Gemini._SERVICE_ACCOUNT_FILE_PATH or ensure it has a default value.")
 
             try:
-                credentials, _ = google.auth.load_credentials_from_file(self._SERVICE_ACCOUNT_FILE_PATH)
+                service_account_info = json.loads(os.environ["GOOGLE_SERVICE_ACCOUNT_JSON"])
+                credentials = service_account.Credentials.from_service_account_info(service_account_info)
             except FileNotFoundError:
                 raise FileNotFoundError(f"Service account file not found at: {self._SERVICE_ACCOUNT_FILE_PATH}. Please check the path.")
             except Exception as e:
