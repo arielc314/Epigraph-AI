@@ -3,10 +3,17 @@ from flask import Flask, request, jsonify, Response
 from flask_cors import CORS
 import json
 import time
-import re
 import logging
 import sys
 import os
+import base64
+
+creds_b64 = os.getenv("GOOGLE_CREDENTIALS_B64")
+if creds_b64:
+    creds_json = base64.b64decode(creds_b64).decode("utf-8")
+    with open("/tmp/credentials.json", "w") as f:
+        f.write(creds_json)
+    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "/tmp/credentials.json"
 
 app = Flask(__name__)
 CORS(app)
