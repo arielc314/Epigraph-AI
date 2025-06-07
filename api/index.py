@@ -7,6 +7,24 @@ import sys
 import os
 import base64
 
+VALID_STAGES = [
+    'initializing',
+    'preliminary_analysis', 
+    'advanced_processing',
+    'detailed_processing',
+    'generating_summary',
+    'finalizing',
+    'complete'
+]
+
+def safe_stage_send(stage_name):
+    """Send stage only if it's valid"""
+    if stage_name in VALID_STAGES:
+        return {'type': 'status', 'stage': stage_name}
+    else:
+        logger.warning(f"Invalid stage attempted: {stage_name}")
+        return {'type': 'status', 'stage': 'initializing'}
+
 def safe_json_text(text):
     if text:
         # fixing problematic Unicode
@@ -279,11 +297,11 @@ def query_stream():
     def generate():
         try:
             # שלב 1: התחלה
-            yield f"data: {safe_json_dumps({'type': 'status', 'stage': 'initializing'})}\n\n"
+            yield f"data: {safe_json_dumps(safe_stage_send('initializing'))}\n\n"
             time.sleep(0.5)
             
             # שלב 2: עיבוד ראשוני - Controller & Libraries
-            yield f"data: {safe_json_dumps({'type': 'status', 'stage': 'preliminary_analysis'})}\n\n"
+            yield f"data: {safe_json_dumps(safe_stage_send('preliminary_analysis'))}\n\n"
             
             # קבלת ניתוח ראשוני מה-controller
             preliminary_analysis = get_preliminary_analysis(text_data)
@@ -292,7 +310,7 @@ def query_stream():
             yield f"data: {safe_json_dumps({'type': 'preliminary_results', 'content': preliminary_analysis})}\n\n"
             
             # שלב 3: עיבוד מתקדם - Flash 2.0
-            yield f"data: {safe_json_dumps({'type': 'status', 'stage': 'advanced_processing'})}\n\n"
+            yield f"data: {safe_json_dumps(safe_stage_send('advanced_processing'))}\n\n"
             
             # הכנת prompt מתקדם עבור Flash 2.0
             flash_prompt = create_flash_prompt(preliminary_analysis, language)
@@ -302,21 +320,21 @@ def query_stream():
             yield f"data: {safe_json_dumps({'type': 'advanced_results', 'content': flash_result})}\n\n"
             
             # שלב 4: עיבוד מלא - Preview Model
-            yield f"data: {safe_json_dumps({'type': 'status', 'stage': 'detailed_processing'})}\n\n"
+            yield f"data: {safe_json_dumps(safe_stage_send('detailed_processing'))}\n\n"
             
             # הכנת prompt מפורט עבור Preview
             preview_prompt = create_preview_prompt(preliminary_analysis, flash_result, language)
             detailed_analysis = safe_ai_call("gemini-2.5-pro-preview-05-06", preview_prompt, "Detailed analysis unavailable")
             
             # שלב 5: יצירת סיכום סופי
-            yield f"data: {safe_json_dumps({'type': 'status', 'stage': 'generating_summary'})}\n\n"
+            yield f"data: {safe_json_dumps(safe_stage_send('generating_summary'))}\n\n"
             
             # יצירת סיכום קצר בהתבסס על הניתוח המפורט
             summary_prompt = create_summary_prompt(detailed_analysis, language)
             final_summary = safe_ai_call("gemini-2.0-flash", summary_prompt, flash_result[:200] + "...")
             
             # שלב 6: סיום והכנת תוצאות סופיות
-            yield f"data: {safe_json_dumps({'type': 'status', 'stage': 'finalizing'})}\n\n"
+            yield f"data: {safe_json_dumps(safe_stage_send('finalizing'))}\n\n"
             
             # הכנת הטאבים הסופיים
             final_results = {
@@ -349,7 +367,7 @@ def query_stream():
             }
             
             yield f"data: {safe_json_dumps({'type': 'final_results', 'results': final_results})}\n\n"
-            yield f"data: {safe_json_dumps({'type': 'complete'})}\n\n"
+            yield f"data: {safe_json_dumps(safe_stage_send('complete'))}\n\n"
             
         except Exception as e:
             logger.error(f"Stream generation error: {e}")
