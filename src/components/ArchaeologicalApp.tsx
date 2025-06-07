@@ -6,7 +6,7 @@ import AboutPage from './AboutPage';
 import { LanguageProvider, useLanguage } from './LanguageContext';
 
 interface LoadingData {
-  stage: 'initializing' | 'quick_preview' | 'analyzing' | 'processing' | 'finalizing' | 'complete';
+  stage: 'initializing' | 'preliminary_analysis' | 'advanced_processing' | 'detailed_processing' | 'generating_summary' | 'finalizing' | 'complete';
   isProcessing: boolean;
   quickPreview?: string;
   stageProgress?: number;
@@ -23,25 +23,30 @@ const LOADING_STAGES = {
     en: 'Initializing analysis...',
     progress: 10
   },
-  'quick_preview': {
-    he: 'מקבל תוצאות ראשוניות...',
-    en: 'Getting quick preview...',
-    progress: 30
+  'preliminary_analysis': {
+    he: 'עיבוד ראשוני - ספריות וסיווג...',
+    en: 'Preliminary analysis - libraries & classification...',
+    progress: 25
   },
-  'analyzing': {
-    he: 'מנתח לעומק...',
-    en: 'Deep analysis...',
+  'advanced_processing': {
+    he: 'עיבוד מתקדם - Flash 2.0...',
+    en: 'Advanced processing - Flash 2.0...',
     progress: 50
   },
-  'processing': {
-    he: 'מעבד תוצאות מפורטות...',
-    en: 'Processing detailed results...',
+  'detailed_processing': {
+    he: 'ניתוח מלא - Preview Model...',
+    en: 'Detailed analysis - Preview Model...',
     progress: 75
   },
-  'finalizing': {
-    he: 'משלים את הניתוח...',
-    en: 'Finalizing analysis...',
+  'generating_summary': {
+    he: 'יוצר סיכום סופי...',
+    en: 'Generating final summary...',
     progress: 90
+  },
+  'finalizing': {
+    he: 'משלים...',
+    en: 'Finalizing...',
+    progress: 95
   },
   'complete': {
     he: 'הושלם!',
@@ -146,35 +151,35 @@ const ArchaeologicalAppInner: React.FC = () => {
                       stage: data.stage,
                       stageProgress: LOADING_STAGES[data.stage as keyof typeof LOADING_STAGES]?.progress || prev.stageProgress
                     }));
+                    break;
+                    
+                  case 'preliminary_results':
+                    console.log(`📊 Preliminary results received`);
+                    setLoadingData(prev => ({ 
+                      ...prev,
+                      stage: 'advanced_processing',
+                      genre: data.content.genre,
+                      period: data.content.period,
+                      stageProgress: LOADING_STAGES.advanced_processing.progress
+                    }));
+                    break;
+                    
+                  case 'advanced_results':
+                    console.log(`⚡ Advanced results from Flash 2.0`);
+                    setLoadingData(prev => ({ 
+                      ...prev,
+                      stage: 'detailed_processing',
+                      quickPreview: data.content,
+                      stageProgress: LOADING_STAGES.detailed_processing.progress
+                    }));
+                    break;
+                    
                   case 'complete':
                     console.log(`[${language.toUpperCase()}] Stream analysis completed successfully`);
-                    console.log('processingRef.current on complete:', processingRef.current);
-                    break;
-                    
-                  case 'quick_preview':
-                    console.log(`📱 Quick preview received`);
-                    setLoadingData(prev => ({ 
-                      ...prev,
-                      stage: 'analyzing',
-                      quickPreview: data.content,
-                      stageProgress: LOADING_STAGES.analyzing.progress
-                    }));
-                    break;
-                    
-                  case 'classification':
-                    console.log(`🏺 Classification received`);
-                    setLoadingData(prev => ({ 
-                      ...prev,
-                      genre: data.genre,
-                      period: data.period,
-                      stage: 'processing',
-                      stageProgress: LOADING_STAGES.processing.progress
-                    }));
                     break;
                     
                   case 'final_results':
                     console.log(`✅ Final results received`);
-                    console.log('processingRef.current before setting results:', processingRef.current);
                     
                     setLoadingData(prev => ({ 
                       ...prev,
@@ -183,11 +188,6 @@ const ArchaeologicalAppInner: React.FC = () => {
                     }));
                     
                     setResults(data.results);
-                    
-                    console.log('processingRef.current after setting results:', processingRef.current);
-                    
-                    // Direct navigation without timeout
-                    console.log('Navigating to results immediately...');
                     setCurrentPage('results');
                     break;
                     
@@ -470,22 +470,24 @@ const ArchaeologicalAppInner: React.FC = () => {
                             )}
                           </div>
                           <span className="text-xs font-medium text-center leading-tight max-w-16">
-                            {language === 'he' ? {
-                              'initializing': 'התחלה',
-                              'quick_preview': 'תצוגה מקדימה',
-                              'analyzing': 'ניתוח',
-                              'processing': 'עיבוד',
-                              'finalizing': 'סיום',
-                              'complete': 'הושלם'
-                            }[stage as keyof typeof LOADING_STAGES] : {
-                              'initializing': 'Start',
-                              'quick_preview': 'Preview',
-                              'analyzing': 'Analysis',
-                              'processing': 'Processing',
-                              'finalizing': 'Finalizing',
-                              'complete': 'Complete'
-                            }[stage as keyof typeof LOADING_STAGES]}
-                          </span>
+                          {language === 'he' ? {
+                            'initializing': 'התחלה',
+                            'preliminary_analysis': 'ראשוני',
+                            'advanced_processing': 'מתקדם',
+                            'detailed_processing': 'מפורט',
+                            'generating_summary': 'סיכום',
+                            'finalizing': 'סיום',
+                            'complete': 'הושלם'
+                          }[stage as keyof typeof LOADING_STAGES] : {
+                            'initializing': 'Start',
+                            'preliminary_analysis': 'Basic',
+                            'advanced_processing': 'Advanced',
+                            'detailed_processing': 'Detailed',
+                            'generating_summary': 'Summary',
+                            'finalizing': 'Final',
+                            'complete': 'Done'
+                          }[stage as keyof typeof LOADING_STAGES]}
+                        </span>
                         </div>
                       );
                     })}

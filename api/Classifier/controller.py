@@ -163,7 +163,6 @@ def extract_transliteration(input_text, input_type):
         # ניתוח מעמיק של הטקסט
         analysis = analyze_cuneiform_text(input_text)
         
-        # יצירת מודלים (mock לעת עתה)
         genre_classifier = GenreClassifier()
         period_classifier = PeriodClassifier()
         
