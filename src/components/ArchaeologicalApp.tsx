@@ -30,43 +30,77 @@ interface LoadingData {
 }
 
 // 2. עדכון LOADING_STAGES (החלף את הקיים)
-const LOADING_STAGES = {
-  'initializing': {
-    he: 'מתחיל ניתוח...',
-    en: 'Initializing analysis...',
-    progress: 10
-  },
-  'preliminary_analysis': {
-    he: 'עיבוד ראשוני - ספריות וסיווג...',
-    en: 'Preliminary analysis - libraries & classification...',
-    progress: 25
-  },
-  'advanced_processing': {
-    he: 'עיבוד מתקדם - Flash 2.0...',
-    en: 'Advanced processing - Flash 2.0...',
-    progress: 50
-  },
-  'detailed_processing': {
-    he: 'ניתוח מלא - Preview Model...',
-    en: 'Detailed analysis - Preview Model...',
-    progress: 75
-  },
-  'generating_summary': {
-    he: 'יוצר סיכום סופי...',
-    en: 'Generating final summary...',
-    progress: 90
-  },
-  'finalizing': {
-    he: 'משלים...',
-    en: 'Finalizing...',
-    progress: 95
-  },
-  'complete': {
-    he: 'הושלם!',
-    en: 'Complete!',
-    progress: 100
-  }
-} as const;
+// const LOADING_STAGES = {
+//   'initializing': {
+//     he: 'מתחיל ניתוח...',
+//     en: 'Initializing analysis...',
+//     progress: 10
+//   },
+//   'preliminary_analysis': {
+//     he: 'עיבוד ראשוני - ספריות וסיווג...',
+//     en: 'Preliminary analysis - libraries & classification...',
+//     progress: 25
+//   },
+//   'advanced_processing': {
+//     he: 'עיבוד מתקדם - Flash 2.0...',
+//     en: 'Advanced processing - Flash 2.0...',
+//     progress: 50
+//   },
+//   'detailed_processing': {
+//     he: 'ניתוח מלא - Preview Model...',
+//     en: 'Detailed analysis - Preview Model...',
+//     progress: 75
+//   },
+//   'generating_summary': {
+//     he: 'יוצר סיכום סופי...',
+//     en: 'Generating final summary...',
+//     progress: 90
+//   },
+//   'finalizing': {
+//     he: 'משלים...',
+//     en: 'Finalizing...',
+//     progress: 95
+//   },
+//   'complete': {
+//     he: 'הושלם!',
+//     en: 'Complete!',
+//     progress: 100
+//   }
+// } as const;
+
+// ArchaeologicalApp.tsx - תיקון פשוט וישיר
+
+// 1. הסר לגמרי את LOADING_STAGES (מחק את כל הקוד הזה)
+// const LOADING_STAGES = { ... }
+
+// 2. הוסף פונקציות פשוטות במקום
+const getStageText = (stage: string, language: string) => {
+  const texts: { [key: string]: { he: string; en: string } } = {
+    'initializing': { he: 'מתחיל ניתוח...', en: 'Initializing analysis...' },
+    'preliminary_analysis': { he: 'עיבוד ראשוני...', en: 'Preliminary analysis...' },
+    'advanced_processing': { he: 'עיבוד מתקדם...', en: 'Advanced processing...' },
+    'detailed_processing': { he: 'ניתוח מפורט...', en: 'Detailed processing...' },
+    'generating_summary': { he: 'יוצר סיכום...', en: 'Generating summary...' },
+    'finalizing': { he: 'משלים...', en: 'Finalizing...' },
+    'complete': { he: 'הושלם!', en: 'Complete!' }
+  };
+  
+  return texts[stage]?.[language as 'he' | 'en'] || (language === 'he' ? 'מעבד...' : 'Processing...');
+};
+
+const getStageProgress = (stage: string) => {
+  const progress: { [key: string]: number } = {
+    'initializing': 10,
+    'preliminary_analysis': 25,
+    'advanced_processing': 50,
+    'detailed_processing': 75,
+    'generating_summary': 90,
+    'finalizing': 95,
+    'complete': 100
+  };
+  
+  return progress[stage] || 0;
+};
 
 const ArchaeologicalAppInner: React.FC = () => {
   const { language, t } = useLanguage();
@@ -101,7 +135,7 @@ const ArchaeologicalAppInner: React.FC = () => {
       setLoadingData({ 
         stage: 'initializing', 
         isProcessing: true,
-        stageProgress: LOADING_STAGES.initializing.progress
+        stageProgress: getStageProgress('initializing')
       });
 
       // Prepare request payload
@@ -159,17 +193,11 @@ const ArchaeologicalAppInner: React.FC = () => {
                 
                 switch (data.type) {
                   case 'status':
-                    // תיקון בטוח - בדוק אם stage קיים
-                    const validStage = data.stage as keyof typeof LOADING_STAGES;
-                    if (LOADING_STAGES[validStage]) {
-                      setLoadingData(prev => ({ 
-                        ...prev, 
-                        stage: validStage,
-                        stageProgress: LOADING_STAGES[validStage]?.progress || prev.stageProgress
-                      }));
-                    } else {
-                      console.warn(`Unknown stage received: ${data.stage}`);
-                    }
+                    setLoadingData(prev => ({ 
+                      ...prev, 
+                      stage: data.stage,
+                      stageProgress: getStageProgress(data.stage)
+                    }));
                     break;
                     
                   case 'preliminary_results':
@@ -179,7 +207,7 @@ const ArchaeologicalAppInner: React.FC = () => {
                       stage: 'advanced_processing',
                       genre: data.content?.genre,
                       period: data.content?.period,
-                      stageProgress: LOADING_STAGES.advanced_processing.progress
+                      stageProgress: getStageProgress('advanced_processing')
                     }));
                     break;
                     
@@ -189,31 +217,24 @@ const ArchaeologicalAppInner: React.FC = () => {
                       ...prev,
                       stage: 'detailed_processing',
                       quickPreview: data.content,
-                      stageProgress: LOADING_STAGES.detailed_processing.progress
+                      stageProgress: getStageProgress('detailed_processing')
                     }));
                     break;
                     
                   case 'complete':
-                    console.log(`[${language.toUpperCase()}] Stream analysis completed successfully`);
-                    console.log('processingRef.current on complete:', processingRef.current);
+                    console.log(`🔄 Stream complete signal received`);
                     break;
                     
                   case 'final_results':
                     console.log(`✅ Final results received`);
-                    console.log('processingRef.current before setting results:', processingRef.current);
                     
                     setLoadingData(prev => ({ 
                       ...prev,
                       stage: 'complete',
-                      stageProgress: LOADING_STAGES.complete.progress
+                      stageProgress: getStageProgress('complete')
                     }));
                     
                     setResults(data.results);
-                    
-                    console.log('processingRef.current after setting results:', processingRef.current);
-                    
-                    // Direct navigation without timeout
-                    console.log('Navigating to results immediately...');
                     setCurrentPage('results');
                     break;
                     
@@ -222,16 +243,12 @@ const ArchaeologicalAppInner: React.FC = () => {
                     setResults({
                       summary: data.message,
                       tabs: [{ 
-                        name: t('common.error'), 
+                        name: 'Error', 
                         content: data.message
                       }]
                     });
                     setCurrentPage('results');
                     return;
-                    
-                  default:
-                    console.warn(`Unknown message type: ${data.type}`);
-                    break;
                 }
               } catch (parseError) {
                 console.error('Error parsing stream data:', parseError);
@@ -350,189 +367,165 @@ const ArchaeologicalAppInner: React.FC = () => {
     switch (currentPage) {
       case 'results':
         return results ? <ResultsPage results={results} resetToHome={resetToHome} /> : null;
-      case 'loading':
-        return (
-          <div className="max-w-5xl mx-auto px-4">
-            <div className="bg-white rounded-2xl shadow-2xl border border-amber-100 overflow-hidden">
-              {/* Enhanced Header with elegant design */}
-              <div className="bg-gradient-to-r from-amber-600 via-yellow-600 to-amber-700 px-8 py-6 relative overflow-hidden">
-                <div className="absolute inset-0 bg-black bg-opacity-10"></div>
-                <div className="relative flex justify-between items-center">
-                  <div className="flex items-center space-x-4">
-                    <div className="w-12 h-12 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
-                      <span className="text-2xl">🏺</span>
+        case 'loading':
+          return (
+            <div className="max-w-5xl mx-auto px-4">
+              <div className="bg-white rounded-2xl shadow-2xl border border-amber-100 overflow-hidden">
+                {/* Header */}
+                <div className="bg-gradient-to-r from-amber-600 via-yellow-600 to-amber-700 px-8 py-6 relative overflow-hidden">
+                  <div className="absolute inset-0 bg-black bg-opacity-10"></div>
+                  <div className="relative flex justify-between items-center">
+                    <div className="flex items-center space-x-4">
+                      <div className="w-12 h-12 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                        <span className="text-2xl">🏺</span>
+                      </div>
+                      <div>
+                        <h2 className="text-2xl font-bold text-white">
+                          {language === 'he' ? 'מעבד ניתוח' : 'Processing Analysis'}
+                        </h2>
+                        <p className="text-yellow-100 text-sm opacity-90">
+                          {language === 'he' ? 'מנתח כתובת עתיקה...' : 'Analyzing ancient inscription...'}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <h2 className="text-2xl font-bold text-white">{t('loading.title')}</h2>
-                      <p className="text-yellow-100 text-sm opacity-90">
-                        {language === 'he' ? 'מנתח כתובת עתיקה...' : 'Analyzing ancient inscription...'}
-                      </p>
-                    </div>
+                    <button
+                      onClick={handleCancelProcessing}
+                      className="p-3 text-white hover:bg-white hover:bg-opacity-20 rounded-full transition-all duration-200"
+                      title={language === 'he' ? 'ביטול' : 'Cancel'}
+                    >
+                      <span className="text-xl font-bold">✕</span>
+                    </button>
                   </div>
-                  <button
-                    onClick={handleCancelProcessing}
-                    className="p-3 text-white hover:bg-white hover:bg-opacity-20 rounded-full transition-all duration-200 hover:scale-110"
-                    title={t('common.cancel')}
-                  >
-                    <span className="text-xl font-bold">✕</span>
-                  </button>
                 </div>
-              </div>
-              
-              <div className="p-8">
-                {/* Enhanced loading spinner with elegant progress */}
-                <div className="text-center mb-8">
-                  <div className="relative inline-block mb-6">
-                    <div className="animate-spin rounded-full h-20 w-20 border-4 border-amber-200 border-t-amber-600 shadow-lg"></div>
-                    {loadingData.stageProgress && (
+                
+                <div className="p-8">
+                  {/* Loading spinner */}
+                  <div className="text-center mb-8">
+                    <div className="relative inline-block mb-6">
+                      <div className="animate-spin rounded-full h-20 w-20 border-4 border-amber-200 border-t-amber-600 shadow-lg"></div>
                       <div className="absolute inset-0 flex items-center justify-center">
                         <span className="text-sm font-bold text-amber-700 bg-white rounded-full px-2 py-1 shadow-sm">
-                          {loadingData.stageProgress}%
+                          {getStageProgress(loadingData.stage)}%
                         </span>
                       </div>
-                    )}
+                    </div>
+                    <p className="text-gray-700 font-medium text-lg mb-2">
+                      {getStageText(loadingData.stage, language)}
+                    </p>
+                    <div className="w-full bg-amber-100 rounded-full h-2 mb-4 shadow-inner">
+                      <div 
+                        className="bg-gradient-to-r from-amber-500 to-yellow-500 h-2 rounded-full transition-all duration-500 ease-out shadow-sm"
+                        style={{ width: `${getStageProgress(loadingData.stage)}%` }}
+                      ></div>
+                    </div>
                   </div>
-                  <p className="text-gray-700 font-medium text-lg mb-2">
-                    {LOADING_STAGES[loadingData.stage][language]}
-                  </p>
-                  <div className="w-full bg-amber-100 rounded-full h-2 mb-4 shadow-inner">
-                    <div 
-                      className="bg-gradient-to-r from-amber-500 to-yellow-500 h-2 rounded-full transition-all duration-500 ease-out shadow-sm"
-                      style={{ width: `${loadingData.stageProgress || 0}%` }}
-                    ></div>
-                  </div>
-                </div>
-
-                {/* Enhanced Quick Preview with sophisticated design */}
-                {loadingData.quickPreview && (
-                  <div className="bg-gradient-to-br from-yellow-50 via-orange-50 to-red-50 rounded-2xl p-8 border-2 border-red-200 shadow-lg animate-slideInUp">
-                    <div className="flex items-start space-x-8">
-                      <div className="w-12 h-12 bg-gradient-to-br from-orange-500 via-yellow-500 to-red-500 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-lg spac-x-4 mx-3">
-                        <span className="text-white text-2xl">⚡</span>
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between mb-8">
-                          <h3 className="font-bold text-yellow-900 text-xl flex items-center">
+        
+                  {/* Quick Preview */}
+                  {loadingData.quickPreview && (
+                    <div className="bg-gradient-to-br from-yellow-50 via-orange-50 to-red-50 rounded-2xl p-6 border-2 border-red-200 shadow-lg mb-8">
+                      <div className="flex items-start space-x-4">
+                        <div className="w-12 h-12 bg-gradient-to-br from-orange-500 via-yellow-500 to-red-500 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-lg">
+                          <span className="text-white text-2xl">⚡</span>
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="font-bold text-yellow-900 text-xl mb-4">
                             {language === 'he' ? 'תוצאות מיידיות' : 'Instant Results'}
-                            <span className="ml-3 px-3 py-1 bg-yellow-500 text-white text-xs rounded-full font-medium shadow-sm">
-                              {language === 'he' ? 'מיידי' : 'INSTANT'}
-                            </span>
                           </h3>
-                          <button
-                            onClick={() => navigator.clipboard.writeText(loadingData.quickPreview || '')}
-                            className="p-2 text-yellow-600 hover:bg-yellow-100 rounded-lg transition-colors duration-200 hover:scale-105"
-                            title={language === 'he' ? 'העתק' : 'Copy'}
-                          >
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                            </svg>
-                          </button>
-                        </div>
-                        <div className="bg-white rounded-xl p-5 border border-yellow-200 shadow-inner mb-4">
-                          <p className="text-gray-800 leading-relaxed text-base font-medium whitespace-pre-wrap">
-                            {loadingData.quickPreview}
-                          </p>
-                        </div>
-                        <div className="text-sm text-yellow-700 flex items-center bg-yellow-100 bg-opacity-50 p-3 rounded-lg">
-                          <div className="w-2 h-2 bg-yellow-500 rounded-full mr-3 animate-pulse"></div>
-                          <span className="italic">
-                            {language === 'he' ? 'ממשיך לניתוח מעמיק עם מודל מתקדם...' : 'Continuing with advanced deep analysis...'}
-                          </span>
+                          <div className="bg-white rounded-xl p-4 border border-yellow-200 shadow-inner">
+                            <p className="text-gray-800 leading-relaxed text-base font-medium whitespace-pre-wrap">
+                              {loadingData.quickPreview}
+                            </p>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                )}
-
-                {/* Enhanced Classification Results with elegant styling */}
-                {(loadingData.genre || loadingData.period) && (
-                  <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl p-6 mb-8 border-2 border-emerald-200 shadow-lg animate-slideInUp">
-                    <div className="flex items-start space-x-4">
-                      <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg mx-3">
-                        <span className="text-white text-xl">📊</span>
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="font-bold text-emerald-900 mb-4 text-lg">
-                          {language === 'he' ? 'סיווג ראשוני' : 'Initial Classification'}
-                        </h3>
-                        <div className="grid md:grid-cols-2 gap-4">
-                          {loadingData.genre && (
-                            <div className="bg-white rounded-lg p-4 border border-emerald-200 shadow-sm">
-                              <div className="text-sm text-emerald-600 font-medium mb-1">
-                                {language === 'he' ? 'סוג הכתובת' : 'Inscription Type'}
-                              </div>
-                              <div className="text-emerald-900 font-semibold">{loadingData.genre}</div>
+                  )}
+        
+                  {/* Classification Results */}
+                  {(loadingData.genre || loadingData.period) && (
+                    <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl p-6 mb-8 border-2 border-emerald-200 shadow-lg">
+                      <h3 className="font-bold text-emerald-900 mb-4 text-lg">
+                        {language === 'he' ? 'סיווג ראשוני' : 'Initial Classification'}
+                      </h3>
+                      <div className="grid md:grid-cols-2 gap-4">
+                        {loadingData.genre && (
+                          <div className="bg-white rounded-lg p-4 border border-emerald-200 shadow-sm">
+                            <div className="text-sm text-emerald-600 font-medium mb-1">
+                              {language === 'he' ? 'סוג הכתובת' : 'Inscription Type'}
                             </div>
-                          )}
-                          {loadingData.period && (
-                            <div className="bg-white rounded-lg p-4 border border-emerald-200 shadow-sm">
-                              <div className="text-sm text-emerald-600 font-medium mb-1">
-                                {language === 'he' ? 'תקופה היסטורית' : 'Historical Period'}
-                              </div>
-                              <div className="text-emerald-900 font-semibold">{loadingData.period}</div>
+                            <div className="text-emerald-900 font-semibold">{loadingData.genre}</div>
+                          </div>
+                        )}
+                        {loadingData.period && (
+                          <div className="bg-white rounded-lg p-4 border border-emerald-200 shadow-sm">
+                            <div className="text-sm text-emerald-600 font-medium mb-1">
+                              {language === 'he' ? 'תקופה היסטורית' : 'Historical Period'}
                             </div>
-                          )}
-                        </div>
+                            <div className="text-emerald-900 font-semibold">{loadingData.period}</div>
+                          </div>
+                        )}
                       </div>
                     </div>
+                  )}
+        
+                  {/* Progress steps */}
+                  <div className="flex justify-center mb-8">
+                    <div className="flex items-center space-x-4 bg-gray-50 rounded-2xl p-4 shadow-inner">
+                      {['initializing', 'preliminary_analysis', 'advanced_processing', 'detailed_processing', 'generating_summary', 'finalizing', 'complete'].map((stage, index) => {
+                        const stages = ['initializing', 'preliminary_analysis', 'advanced_processing', 'detailed_processing', 'generating_summary', 'finalizing', 'complete'];
+                        const currentStageIndex = stages.indexOf(loadingData.stage);
+                        const isActive = index <= currentStageIndex;
+                        const isCurrent = index === currentStageIndex;
+                        
+                        return (
+                          <div key={stage} className={`flex flex-col items-center transition-all duration-500 ${
+                            isActive ? 'text-amber-600 scale-105' : 'text-gray-400'
+                          } ${isCurrent ? 'font-bold transform scale-110' : ''}`}>
+                            <div className={`w-6 h-6 rounded-full border-2 mb-2 transition-all duration-500 ${
+                              isActive ? 'bg-amber-500 border-amber-500 shadow-lg' : 'border-gray-300'
+                            } ${isCurrent ? 'animate-pulse scale-125 shadow-amber-300' : ''}`}>
+                              {isActive && (
+                                <div className="w-full h-full rounded-full bg-white bg-opacity-30"></div>
+                              )}
+                            </div>
+                            <span className="text-xs font-medium text-center leading-tight max-w-16">
+                              {language === 'he' ? {
+                                'initializing': 'התחלה',
+                                'preliminary_analysis': 'ראשוני', 
+                                'advanced_processing': 'מתקדם',
+                                'detailed_processing': 'מפורט',
+                                'generating_summary': 'סיכום',
+                                'finalizing': 'סיום',
+                                'complete': 'הושלם'
+                              }[stage] : {
+                                'initializing': 'Start',
+                                'preliminary_analysis': 'Basic',
+                                'advanced_processing': 'Advanced', 
+                                'detailed_processing': 'Detailed',
+                                'generating_summary': 'Summary',
+                                'finalizing': 'Final',
+                                'complete': 'Done'
+                              }[stage]}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
-                )}
-
-                {/* Enhanced progress steps with sophisticated design */}
-                <div className="flex justify-center mb-8">
-                <div className="flex items-center space-x-4 bg-gray-50 rounded-2xl p-4 shadow-inner">
-                  {Object.keys(LOADING_STAGES).map((stage, index) => {
-                    const currentStageIndex = Object.keys(LOADING_STAGES).indexOf(loadingData.stage);
-                    const isActive = index <= currentStageIndex;
-                    const isCurrent = index === currentStageIndex;
-                    
-                    // Safe stage name lookup
-                    const stageName = stage as keyof typeof LOADING_STAGES;
-                    const stageLabels = {
-                      'initializing': { he: 'התחלה', en: 'Start' },
-                      'preliminary_analysis': { he: 'ראשוני', en: 'Basic' },
-                      'advanced_processing': { he: 'מתקדם', en: 'Advanced' },
-                      'detailed_processing': { he: 'מפורט', en: 'Detailed' },
-                      'generating_summary': { he: 'סיכום', en: 'Summary' },
-                      'finalizing': { he: 'סיום', en: 'Final' },
-                      'complete': { he: 'הושלם', en: 'Done' }
-                    };
-                    
-                    return (
-                      <div key={stage} className={`flex flex-col items-center transition-all duration-500 ${
-                        isActive ? 'text-amber-600 scale-105' : 'text-gray-400'
-                      } ${isCurrent ? 'font-bold transform scale-110' : ''}`}>
-                        <div className={`w-6 h-6 rounded-full border-2 mb-2 transition-all duration-500 ${
-                          isActive
-                            ? 'bg-amber-500 border-amber-500 shadow-lg' 
-                            : 'border-gray-300'
-                        } ${isCurrent ? 'animate-pulse scale-125 shadow-amber-300' : ''}`}>
-                          {isActive && (
-                            <div className="w-full h-full rounded-full bg-white bg-opacity-30"></div>
-                          )}
-                        </div>
-                        <span className="text-xs font-medium text-center leading-tight max-w-16">
-                          {stageLabels[stageName]?.[language] || stage}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-                
-                {/* Enhanced cancel button */}
-                <div className="text-center">
-                  <button
-                    onClick={handleCancelProcessing}
-                    className="px-8 py-3 bg-gradient-to-r from-gray-500 to-gray-600 text-white rounded-xl hover:from-gray-600 hover:to-gray-700 transition-all duration-200 font-medium shadow-lg hover:shadow-xl transform hover:scale-105"
-                  >
-                    {t('common.cancel')}
-                  </button>
+                  
+                  {/* Cancel button */}
+                  <div className="text-center">
+                    <button
+                      onClick={handleCancelProcessing}
+                      className="px-8 py-3 bg-gradient-to-r from-gray-500 to-gray-600 text-white rounded-xl hover:from-gray-600 hover:to-gray-700 transition-all duration-200 font-medium shadow-lg hover:shadow-xl transform hover:scale-105"
+                    >
+                      {language === 'he' ? 'ביטול' : 'Cancel'}
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        );
+          );
       case 'about':
         return <AboutPage setCurrentPage={handlePageChange} />;
       default:
