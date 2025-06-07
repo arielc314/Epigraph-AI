@@ -490,4 +490,5 @@ if __name__ == '__main__':
     logger.info("🚀 Starting Epigraph-AI server...")
     logger.info(f"🤖 AI Status: Initializing...")
     logger.info(f"📚 Classifier Status: {'Available' if CLASSIFIER_AVAILABLE else 'Fallback mode'}")
-    app.run(debug=True, port=5328, host='127.0.0.1')
+    port = int(os.environ.get("PORT", 10000))
+    app.run(debug=True, port=port, host='0.0.0.0')
