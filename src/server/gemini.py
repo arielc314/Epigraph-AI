@@ -1,5 +1,7 @@
 import google.generativeai as genai
 from google.oauth2 import service_account
+import json
+import os
 
 
 class Gemini:
@@ -7,8 +9,6 @@ class Gemini:
     Simple Gemini API client - use as a black box
     Just call init_model() with your preferred model and use ask()
     """
-
-    _SERVICE_ACCOUNT_FILE_PATH = "./api/ai/credentials.json"
 
     # Available models with descriptions
     AVAILABLE_MODELS = {
