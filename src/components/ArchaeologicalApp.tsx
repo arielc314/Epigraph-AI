@@ -101,7 +101,7 @@ const ArchaeologicalAppInner: React.FC = () => {
       console.log('processingRef.current:', processingRef.current);
       
       // Create streaming request
-      const sseResponse = await fetch('${process.env.NEXT_PUBLIC_API_BASE}/api/query-stream', {
+      const sseResponse = await fetch(`${process.env.NEXT_PUBLIC_API_BASE}/api/query-stream`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -237,7 +237,7 @@ const ArchaeologicalAppInner: React.FC = () => {
           }
         };
         
-        const response = await fetch('${process.env.NEXT_PUBLIC_API_BASE}/api/query', {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE}/api/query`, {
           method: 'POST',
           headers: { 
             'Content-Type': 'application/json',
