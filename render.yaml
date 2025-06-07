@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: epigraph-api
+    env: python
+    region: frankfurt
+    buildCommand: ""
+    startCommand: python api/index.py
+    plan: free
+    autoDeploy: true
