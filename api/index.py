@@ -10,7 +10,6 @@ import base64
 def safe_json_text(text):
     if text:
         # fixing problematic Unicode
-        text = text.replace('\\u', '\\\\u')
         text = text.replace('\x00', '')
     return text
 
@@ -122,6 +121,9 @@ class AppState:
             'loaded_models': list(self.gemini_models.keys()),
             'last_error': self.last_error
         }
+
+def safe_json_dumps(data):
+    return json.dumps(data, ensure_ascii=False).replace('\u2028', '\\u2028').replace('\u2029', '\\u2029')
 
 # Global app state
 app_state = AppState()
@@ -277,14 +279,14 @@ def query_stream():
     def generate():
         try:
             # Step 1: Start with initializing
-            yield f"data: {json.dumps({'type': 'status', 'stage': 'initializing'})}\n\n"
+            yield f"data: {safe_json_dumps({'type': 'status', 'stage': 'initializing' })}\n\n"
             time.sleep(0.5)
             
             # Step 2: Enhanced analysis with classifier
             enhanced_analysis = enhanced_content_analysis(text_data)
             
             # Step 3: Quick AI preview
-            yield f"data: {json.dumps({'type': 'status', 'stage': 'quick_preview'})}\n\n"
+            yield f"data: {safe_json_dumps({'type': 'status', 'stage': 'quick_preview'})}\n\n"
             
             quick_prompt = f"""
             {'בעברית:' if language == 'he' else 'In English:'} 
@@ -299,10 +301,10 @@ def query_stream():
             quick_result = safe_ai_call("gemini-2.0-flash", quick_prompt, 
                                       "Quick analysis unavailable. Enhanced classification available below.")
             
-            yield f"data: {json.dumps({'type': 'quick_preview', 'content': quick_result})}\n\n"
+            yield f"data: {safe_json_dumps({'type': 'quick_preview', 'content': quick_result})}\n\n"
             
             # Step 4: Move to analyzing stage
-            yield f"data: {json.dumps({'type': 'status', 'stage': 'analyzing'})}\n\n"
+            yield f"data: {safe_json_dumps({'type': 'status', 'stage': 'analyzing'})}\n\n"
             time.sleep(0.5)
             
             # Step 5: Send classification data
@@ -312,10 +314,10 @@ def query_stream():
                 'language_detected': enhanced_analysis['language'],
                 'content_type': enhanced_analysis['content_type']
             }
-            yield f"data: {json.dumps({'type': 'classification', **classification_data})}\n\n"
+            yield f"data: {safe_json_dumps({'type': 'classification', **classification_data})}\n\n"
             
             # Step 6: Move to processing stage
-            yield f"data: {json.dumps({'type': 'status', 'stage': 'processing'})}\n\n"
+            yield f"data: {safe_json_dumps({'type': 'status', 'stage': 'processing'})}\n\n"
             
             # Step 7: Deep analysis
             deep_prompt = create_intelligent_prompt(enhanced_analysis, language)
@@ -323,7 +325,7 @@ def query_stream():
                                            "Detailed analysis unavailable. Classification provided.")
             
             # Step 8: Finalizing
-            yield f"data: {json.dumps({'type': 'status', 'stage': 'finalizing'})}\n\n"
+            yield f"data: {safe_json_dumps({'type': 'status', 'stage': 'finalizing'})}\n\n"
             time.sleep(0.3)
             
             classification_summary = create_classification_summary(enhanced_analysis, language)
@@ -364,13 +366,13 @@ def query_stream():
                 ]
             }
             
-            yield f"data: {json.dumps({'type': 'final_results', 'results': final_results})}\n\n"
-            yield f"data: {json.dumps({'type': 'complete'})}\n\n"
+            yield f"data: {safe_json_dumps({'type': 'final_results', 'results': final_results})}\n\n"
+            yield f"data: {safe_json_dumps({'type': 'complete'})}\n\n"
             
         except Exception as e:
             logger.error(f"Stream generation error: {e}")
             error_msg = f"Analysis error: {str(e)}"
-            yield f"data: {json.dumps({'type': 'error', 'message': error_msg})}\n\n"
+            yield f"data: {safe_json_dumps({'type': 'error', 'message': error_msg})}\n\n"
     
     return Response(generate(), 
                    content_type='text/plain; charset=utf-8',
