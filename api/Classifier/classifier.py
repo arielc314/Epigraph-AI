@@ -1,23 +1,12 @@
-# api/Classifier/classifier.py
-
 import os
 from transformers import BertForSequenceClassification, BertTokenizer
 
 class BaseClassifier:
     def __init__(self, model_path):
-        # תיקון הנתיב - השתמש בנתיב מוחלט
         if model_path.startswith('./'):
             current_dir = os.path.dirname(os.path.abspath(__file__))
             model_path = os.path.join(current_dir, model_path[2:])
-        
-        # לבדיקה - השתמש במודלים מדומים
-        print(f"Mock classifier initialized with path: {model_path}")
-        self.model = None  # Mock
-        self.tokenizer = None  # Mock
 
-    def classify(self, text):
-        # Mock classification
-        return "mock_result"
 
 class GenreClassifier(BaseClassifier):
     def __init__(self):
@@ -26,24 +15,18 @@ class GenreClassifier(BaseClassifier):
         super().__init__(model_path)
     
     def classify(self, text):
-        # ניתוח מעמיק יותר לז׳אנר
         text_lower = text.lower()
-        
-        # כתובות כלכליות
         economic_indicators = ["gur", "barley", "še", "silver", "maš", "ĝa₂-ĝa₂", "interest"]
         if any(indicator in text_lower for indicator in economic_indicators):
             return "מסמך כלכלי - עסקת שעורים"
             
-        # כתובות משפטיות/אדמיניסטרטיביות
         legal_indicators = ["ba-ti", "šu", "ib₂-ge-ne₂", "confirm"]
         if any(indicator in text_lower for indicator in legal_indicators):
             return "מסמך משפטי - אישור עסקה"
             
-        # כתובות תיארוך
         if "mu" in text_lower and ("us₂-sa" in text_lower or "year" in text_lower):
             return "נוסחת תיארוך מלכותית"
             
-        # כתובות דתיות
         religious_indicators = ["dingir", "god", "temple", "e₂"]
         if any(indicator in text_lower for indicator in religious_indicators):
             return "טקסט דתי או פולחני"
@@ -57,7 +40,6 @@ class PeriodClassifier(BaseClassifier):
         super().__init__(model_path)
     
     def classify(self, text):
-        # ניתוח מעמיק יותר לתקופה
         text_lower = text.lower()
         
         # תקופת אור השלישית

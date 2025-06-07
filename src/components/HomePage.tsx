@@ -29,8 +29,6 @@ const HomePage: React.FC<HomePageProps> = ({
   const [showUploadSection, setShowUploadSection] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   
-  // Simple scroll state
-  const [scrollY, setScrollY] = useState(0);
   const heroRef = useRef<HTMLDivElement>(null);
   const featuresRef = useRef<HTMLDivElement>(null);
   const uploadRef = useRef<HTMLDivElement>(null);
@@ -50,26 +48,6 @@ const HomePage: React.FC<HomePageProps> = ({
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
-
-  // Simple, smooth scroll handler with throttling
-  useEffect(() => {
-    if (isMobile) return;
-
-    let ticking = false;
-    
-    const handleScroll = () => {
-      if (!ticking) {
-        requestAnimationFrame(() => {
-          setScrollY(window.scrollY);
-          ticking = false;
-        });
-        ticking = true;
-      }
-    };
-
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [isMobile]);
 
   // Simple fade-in effect with Intersection Observer
   useEffect(() => {
@@ -175,9 +153,6 @@ const HomePage: React.FC<HomePageProps> = ({
 
   const scrollToUpload = () => {
     setShowUploadSection(true);
-    setTimeout(() => {
-      uploadRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 100);
   };
 
   // Main Logo - ALWAYS CENTERED with simple parallax
@@ -201,7 +176,7 @@ const HomePage: React.FC<HomePageProps> = ({
         {/* Hero Section - Simple and stable */}
         <section 
           ref={heroRef}
-          className={`min-h-[70vh] flex flex-col justify-center fade-in-section ${isMobile ? 'px-4' : ''}`}
+          className={`min-h-[70vh] flex flex-col justify-center fade-in-section ${isMobile ? 'px-4' : ''} `}
         >
           <div className={`mx-auto text-center ${isMobile ? 'max-w-sm px-2' : 'max-w-4xl px-4'}`}>
             {/* Logo - ALWAYS CENTERED */}
@@ -259,7 +234,7 @@ const HomePage: React.FC<HomePageProps> = ({
               ].map((feature, index) => (
                 <div 
                   key={index}
-                  className={`text-center p-6 rounded-lg bg-gradient-to-b from-amber-50 to-yellow-50 border border-amber-200 hover:shadow-xl hover:scale-105 transition-all duration-500 group scroll-reveal parallax-element ${
+                  className={`text-center p-6 rounded-lg bg-gradient-to-b from-amber-50 to-yellow-50 border border-amber-200 hover:shadow-xl hover:scale-105 transition-all duration-500 ${
                     isMobile ? 'p-3' : 'p-4'
                   }`}
                 >
@@ -512,11 +487,6 @@ const HomePage: React.FC<HomePageProps> = ({
           50% {
             transform: translateY(-5px);
           }
-        }
-        
-        /* Smooth scroll behavior */
-        html {
-          scroll-behavior: smooth;
         }
         
         /* Mobile-specific optimizations */

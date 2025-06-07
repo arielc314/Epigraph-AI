@@ -144,7 +144,7 @@ const ResultsPage: React.FC<ResultsPageProps> = ({
         {/* Enhanced Summary Display */}
         <div className="bg-gradient-to-r from-amber-50 to-yellow-50 p-6 rounded-lg border border-amber-200 shadow-inner">
           <div className="flex items-start space-x-4">
-            <div className="w-12 h-12 bg-gradient-to-r from-amber-500 to-yellow-500 rounded-full flex items-center justify-center flex-shrink-0">
+            <div className="w-12 h-12 bg-gradient-to-r from-amber-500 to-yellow-500 rounded-full flex items-center justify-center flex-shrink-0 m-4">
               <span className="text-white text-xl">🏺</span>
             </div>
             <div className="flex-1">
@@ -153,7 +153,7 @@ const ResultsPage: React.FC<ResultsPageProps> = ({
               </p>
               {results.language && (
                 <div className="mt-3 text-sm text-amber-600">
-                  {language === 'he' ? 'ניותח בשפה:' : 'Analyzed in:'} {results.language === 'he' ? 'עברית' : 'English'}
+                  {language === 'he' ? 'נותח בשפה:' : 'Analyzed in:'} {results.language === 'he' ? 'עברית' : 'English'}
                 </div>
               )}
             </div>
@@ -170,12 +170,12 @@ const ResultsPage: React.FC<ResultsPageProps> = ({
 
       {/* Enhanced Quick Preview (if available) */}
       {results.preprocessing?.status === 'success' && (
-        <div className="results-section bg-gradient-to-r from-emerald-50 to-blue-50 rounded-xl p-6 border-2 border-emerald-200 shadow-lg">
-          <h3 className="font-bold text-emerald-800 mb-3 text-lg flex items-center">
-            <span className="mr-2">⚡</span>
+        <div className="results-section bg-gradient-to-r from-red-50 to-blue-50 rounded-xl p-6 border-2 border-red-200 shadow-lg">
+          <h3 className="font-bold text-red-800 mb-3 text-lg flex items-center">
+            <span className="mr-2 text-3xl mx-3">⚡</span>
             {language === 'he' ? 'ניתוח מקדים' : 'Quick Analysis'}
           </h3>
-          <div className="bg-white p-4 rounded-lg border border-emerald-200">
+          <div className="bg-white p-4 rounded-lg border border-red-200">
             <p className="text-gray-800 leading-relaxed">
               {results.preprocessing.preview}
             </p>

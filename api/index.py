@@ -1,556 +1,493 @@
-# Enhanced backend with early quick preview and language-aware classification
-
-from flask import Flask, request, jsonify
-import asyncio
-import json
-from typing import Dict, Any
+# api/index.py - COMPLETE FIXED VERSION
+from flask import Flask, request, jsonify, Response
 from flask_cors import CORS
+import json
+import time
+import re
+import logging
 import sys
 import os
-import signal
-import threading
-
-# Add the current directory to Python path
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-
-# Global processing tracker for cancellation support
-active_requests = {}
-
-try:
-    from src.server.controller import extract_transliteration  # Local file
-    from src.server.gemini import init_model                   # Local file
-    print("✅ Successfully imported modules")
-except ImportError as e:
-    print(f"⚠️ Import error: {e}")
-    # Mock functions for development
-    def extract_transliteration(text, input_type):
-        class MockResult:
-            def __init__(self):
-                self.Text = text
-                self.Genre = "Mock inscription"
-                self.Period = "Mock period"
-        return MockResult()
-    
-    def init_model(model_name):
-        class MockModel:
-            def ask(self, text):
-                if "2.0-flash" in model_name:
-                    return f"Mock quick analysis in requested language."
-                return f"Mock response from model {model_name}"
-        return MockModel()
 
 app = Flask(__name__)
 CORS(app)
 
-def generate(input_text, input_type):
-    """Generate transliteration using controller"""
-    return extract_transliteration(input_text, input_type)
+# Setup logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-def create_language_aware_prompts(language: str, analysis_type: str = "detailed") -> Dict[str, str]:
-    """
-    Create prompts based on user's language preference
-    Returns dictionary with prompt templates for different analysis stages
-    """
+# Add paths for imports
+current_dir = os.path.dirname(os.path.abspath(__file__))
+project_root = os.path.dirname(current_dir)
+server_path = os.path.join(project_root, 'src', 'server')
+classifier_path = os.path.join(current_dir, 'Classifier')
+
+sys.path.insert(0, server_path)
+sys.path.insert(0, classifier_path)
+
+# Import Gemini
+try:
+    from gemini import Gemini
+    logger.info("✅ Successfully imported Gemini")
+except ImportError as e:
+    logger.error(f"❌ Failed to import Gemini: {e}")
+    logger.error(f"Trying to import from: {server_path}")
+    raise
+
+# Import classifier components
+try:
+    from Classifier.classifier import GenreClassifier, PeriodClassifier
+    from Classifier.controller import (
+        extract_transliteration, 
+        analyze_cuneiform_text, 
+        create_structured_summary,
+        TransliterationResult
+    )
+    logger.info("✅ Successfully imported classifier components")
+    CLASSIFIER_AVAILABLE = True
+except ImportError as e:
+    logger.warning(f"⚠️ Classifier import failed: {e}. Using fallback classification.")
+    CLASSIFIER_AVAILABLE = False
+    
+    # Define fallback classes
+    class GenreClassifier:
+        def classify(self, text):
+            if "gur" in text.lower() or "silver" in text.lower():
+                return "מסמך כלכלי"
+            return "כתובת יתדות כללית"
+    
+    class PeriodClassifier:
+        def classify(self, text):
+            if "%sux" in text.lower():
+                return "תקופת אור השלישית (2112-2004 לפנה״ס)"
+            return "תקופה עתיקה"
+    
+    class TransliterationResult:
+        def __init__(self, text, genre, period, structured_data):
+            self.Text = text
+            self.Genre = genre
+            self.Period = period
+            self.StructuredData = structured_data
+    
+    def extract_transliteration(input_text, input_type):
+        return TransliterationResult(
+            text=input_text[:500] + "...",
+            genre="כתובת יתדות",
+            period="מסופוטמיה עתיקה",
+            structured_data={"fallback": True}
+        )
+    
+    def analyze_cuneiform_text(text):
+        return {"language": "unknown", "content_type": "unknown", "fallback": True}
+
+class AppState:
+    def __init__(self):
+        self.gemini_available = False
+        self.gemini_models = {}
+        self.last_error = None
+        self.classifier_available = CLASSIFIER_AVAILABLE
+
+    def get_gemini_model(self, model_name):
+        try:
+            if model_name not in self.gemini_models:
+                logger.info(f"Initializing Gemini model: {model_name}")
+                self.gemini_models[model_name] = Gemini().init_model(model_name)
+                self.gemini_available = True
+                logger.info(f"Successfully initialized {model_name}")
+            return self.gemini_models[model_name]
+        except Exception as e:
+            self.gemini_available = False
+            self.last_error = str(e)
+            logger.error(f"Failed to initialize {model_name}: {e}")
+            raise e
+    
+    def is_gemini_available(self):
+        return self.gemini_available
+    
+    def get_status(self):
+        return {
+            'gemini_available': self.gemini_available,
+            'classifier_available': self.classifier_available,
+            'loaded_models': list(self.gemini_models.keys()),
+            'last_error': self.last_error
+        }
+
+# Global app state
+app_state = AppState()
+
+def enhanced_content_analysis(text_data):
+    try:
+        logger.info("Running cuneiform analysis...")
+        cuneiform_analysis = analyze_cuneiform_text(text_data)
+        
+        logger.info("Extracting transliteration...")
+        transliteration_result = extract_transliteration(text_data, "xml" if "<" in text_data else "text")
+        
+        enhanced_analysis = {
+            'language': cuneiform_analysis.get('language', 'unknown'),
+            'content_type': cuneiform_analysis.get('content_type', 'unknown'),
+            'genre': transliteration_result.Genre,
+            'period': transliteration_result.Period,
+            'structured_text': transliteration_result.Text,
+            'cuneiform_words': cuneiform_analysis.get('cuneiform_words', []),
+            'economic_terms': cuneiform_analysis.get('economic_terms', []),
+            'xml_content': cuneiform_analysis.get('xml_content', False),
+            'analysis_data': cuneiform_analysis
+        }
+        
+        logger.info(f"Enhanced analysis completed: {enhanced_analysis['genre']} from {enhanced_analysis['period']}")
+        return enhanced_analysis
+        
+    except Exception as e:
+        logger.error(f"Enhanced analysis failed: {e}")
+        return {
+            'language': 'unknown',
+            'content_type': 'cuneiform inscription',
+            'genre': 'כתובת יתדות',
+            'period': 'תקופה עתיקה',
+            'structured_text': text_data[:500] + "...",
+            'cuneiform_words': [],
+            'economic_terms': [],
+            'xml_content': '<' in text_data,
+            'analysis_data': {'error': str(e)}
+        }
+
+def create_intelligent_prompt(enhanced_analysis, language='he'):
+    structured_text = enhanced_analysis['structured_text']
     
     if language == 'he':
-        # Hebrew prompts
-        prompts = {
-            "quick_file": """
-אתה מומחה בכתובות יתדות עתיקות וארכיאולוגיה. 
-נתח במהירות את התוכן הבא ותן תשובה מיידית בעברית (1-2 משפטים):
+        prompt = f"""
+אתה חוקר אקדמי בפיגרפיה (מחקר כתובות עתיקות) ובכתב יתדות. 
+ספק ניתוח מקצועי ומדעי של הכתובת הבאה:
 
-{content}
+{structured_text}
 
-זהה:
-1. איזה סוג כתובת/תוכן זה
-2. מה מעניין או חשוב בממצא הזה
-3. איזו תקופה או תרבות (אם ניתן לזהות)
+מידע נוסף מהניתוח הטכני:
+• ז׳אנר: {enhanced_analysis['genre']}
+• תקופה: {enhanced_analysis['period']}
+• שפה: {enhanced_analysis['language']}
+• סוג תוכן: {enhanced_analysis['content_type']}
 
-תשובה קצרה, מעניינת ומקצועית בעברית!
-""",
-            "quick_text": """
-אתה מומחה בכתובות יתדות עתיקות וארכיאולוגיה.
-נתח במהירות את הטקסט הבא: "{content}"
+אנא ספק:
+1. הקשר היסטורי ותרבותי
+2. ניתוח לשוני של המילים שזוהו
+3. משמעות התוכן והחשיבות הארכיאולוגית
+4. פרטים על התקופה והמקום הגיאוגרפי
+5. השוואה לכתובות דומות מהתקופה
 
-השב בעברית בקצרה (1-2 משפטים):
-- מה זה (סוג כתובת/תוכן)?
-- מה המשמעות או החשיבות שלו?
-
-תשובה מקצועית וקצרה בעברית!
-""",
-            "short_summary": """
-אתה מומחה בארכיאולוגיה ובכתובות יתדות עתיקות.
-צור סיכום קצר ומעניין (1-2 משפטים) על הטקסט הבא:
-
-{content}
-
-השב בעברית בצורה נגישה וחוויתית.
-""",
-            "detailed_analysis": """
-אתה חוקר מוביל בתחום הארכיאולוגיה והאשורולוגיה.
-נתח בפירוט את הטקסט הבא:
-
-{content}
-
-בתגובתך כלול:
-• הקשר היסטורי מפורט
-• משמעות התוכן והחשיבות שלו
-• מידע על התקופה והתרבות
-• פרטים מעניינים ורלוונטיים
-
-השב בעברית ברמה אקדמית אך נגישה, באורך של כ-200-300 מילים.
-""",
-            "genre_classification": """
-נתח את הטקסט הבא וסווג אותו לקטגוריה אחת:
-
-{content}
-
-השב בעברית במילה אחת או שתיים בלבד - סוג הכתובת:
-למשל: "כתובת מלכותית", "מסמך כלכלי", "טקסט דתי", "רשימה אדמיניסטרטיבית"
-""",
-            "period_classification": """
-נתח את הטקסט הבא וזהה את התקופה ההיסטורית:
-
-{content}
-
-השב בעברית במילים מעטות בלבד - התקופה:
-למשל: "תקופת אור השלישית", "התקופה הבבלית העתיקה", "התקופה האשורית"
-"""
-        }
+התייחס לרמה אקדמית אך נגישה לקורא המשכיל. התחל ישירות עם הניתוח ללא נוסחאות פתיחה.
+        """
     else:
-        # English prompts
-        prompts = {
-            "quick_file": """
-You are an expert in ancient cuneiform inscriptions and archaeology.
-Quickly analyze the following content and provide an immediate response in English (1-2 sentences):
+        prompt = f"""
+You are an expert in epigraphy and cuneiform studies.
+Provide a professional analysis of this ancient inscription:
 
-{content}
+{structured_text}
 
-Identify:
-1. What type of inscription/content is this
-2. What is interesting or important about this finding
-3. What period or culture (if identifiable)
+Technical analysis data:
+• Genre: {enhanced_analysis['genre']}
+• Period: {enhanced_analysis['period']}
+• Language: {enhanced_analysis['language']}
+• Content type: {enhanced_analysis['content_type']}
 
-Short, interesting and professional response in English!
-""",
-            "quick_text": """
-You are an expert in ancient cuneiform inscriptions and archaeology.
-Quickly analyze the following text: "{content}"
+Please provide:
+1. Historical and cultural context
+2. Linguistic analysis of identified terms
+3. Content significance and archaeological importance
+4. Details about period and geographical location
+5. Comparison to similar inscriptions
 
-Respond in English briefly (1-2 sentences):
-- What is this (type of inscription/content)?
-- What is its meaning or significance?
-
-Professional and concise response in English!
-""",
-            "short_summary": """
-You are an expert in archaeology and ancient cuneiform inscriptions.
-Create a short and interesting summary (1-2 sentences) about the following text:
-
-{content}
-
-Respond in English in an accessible and engaging manner.
-""",
-            "detailed_analysis": """
-You are a leading researcher in archaeology and Assyriology.
-Analyze in detail the following text:
-
-{content}
-
-Include in your response:
-• Detailed historical context
-• Meaning of the content and its importance
-• Information about the period and culture
-• Interesting and relevant details
-
-Respond in English at an academic but accessible level, approximately 200-300 words.
-""",
-            "genre_classification": """
-Analyze the following text and classify it into one category:
-
-{content}
-
-Respond in English with only one or two words - the type of inscription:
-For example: "Royal inscription", "Economic document", "Religious text", "Administrative record"
-""",
-            "period_classification": """
-Analyze the following text and identify the historical period:
-
-{content}
-
-Respond in English with just a few words - the period:
-For example: "Ur III period", "Old Babylonian period", "Neo-Assyrian period"
-"""
-        }
+Academic level but accessible to educated readers.
+        """
     
-    return prompts
+    return prompt
 
-def immediate_quick_preview(text: str, data_type: str, language: str = 'he') -> Dict[str, Any]:
-    """
-    IMMEDIATE quick preview - this runs FIRST before any other processing
-    """
+def safe_ai_call(model_name, prompt, fallback_message="Analysis unavailable"):
     try:
-        print(f"⚡ IMMEDIATE quick preview starting for {data_type} in {language}...", flush=True)
-        
-        # Get language-aware prompts
-        prompts = create_language_aware_prompts(language)
-        
-        # Use the fastest model available
-        gemini_flash = init_model("gemini-2.0-flash-exp")
-        
-        # Select appropriate prompt based on data type
-        if data_type == 'file':
-            quick_prompt = prompts["quick_file"].format(content=text[:800])
-        else:
-            quick_prompt = prompts["quick_text"].format(content=text[:400])
-        
-        print(f"📝 Sending IMMEDIATE prompt to Gemini Flash in {language}...", flush=True)
-        quick_result = gemini_flash.ask(quick_prompt)
-        print(f"✅ Got IMMEDIATE result in {language}: {quick_result[:100]}...", flush=True)
-        
-        return {
-            "status": "success",
-            "preview": quick_result,
-            "language": language
-        }
-        
+        model = app_state.get_gemini_model(model_name)
+        result = model.ask(prompt, short_answer=False)
+        return result if result else fallback_message
     except Exception as e:
-        print(f"❌ IMMEDIATE quick preview error: {e}", flush=True)
-        # Language-aware fallback
-        fallback_msg = (
-            "מתחיל עיבוד מפורט של הכתובת..." 
-            if language == 'he' 
-            else "Starting detailed processing of the inscription..."
-        )
-        return {
-            "status": "partial", 
-            "preview": fallback_msg,
-            "language": language
-        }
+        logger.error(f"AI call failed for {model_name}: {e}")
+        return fallback_message
 
-def get_language_aware_classification(result_text: str, language: str) -> Dict[str, str]:
-    """
-    Get genre and period classification in the correct language
-    """
+def create_classification_summary(enhanced_analysis, language='he'):
+    if language == 'he':
+        summary = f"""סיווג הכתובת:
+
+ז׳אנר: {enhanced_analysis['genre']}
+תקופה: {enhanced_analysis['period']}
+שפה: {enhanced_analysis['language']}
+סוג תוכן: {enhanced_analysis['content_type']}
+
+מידע טכני:
+• התוכן כולל XML: {'כן' if enhanced_analysis['xml_content'] else 'לא'}
+• מילים בכתב יתדות שזוהו: {len(enhanced_analysis['cuneiform_words'])}
+• מונחים כלכליים: {len(enhanced_analysis['economic_terms'])}
+
+{f"מילים שזוהו: {', '.join(enhanced_analysis['cuneiform_words'][:10])}" if enhanced_analysis['cuneiform_words'] else ""}
+{f"מונחים כלכליים: {', '.join(enhanced_analysis['economic_terms'])}" if enhanced_analysis['economic_terms'] else ""}
+"""
+    else:
+        summary = f"""Inscription Classification:
+
+Genre: {enhanced_analysis['genre']}
+Period: {enhanced_analysis['period']}
+Language: {enhanced_analysis['language']}
+Content Type: {enhanced_analysis['content_type']}
+
+Technical Information:
+• Contains XML: {'Yes' if enhanced_analysis['xml_content'] else 'No'}
+• Cuneiform words identified: {len(enhanced_analysis['cuneiform_words'])}
+• Economic terms: {len(enhanced_analysis['economic_terms'])}
+
+{f"Identified words: {', '.join(enhanced_analysis['cuneiform_words'][:10])}" if enhanced_analysis['cuneiform_words'] else ""}
+{f"Economic terms: {', '.join(enhanced_analysis['economic_terms'])}" if enhanced_analysis['economic_terms'] else ""}
+"""
+    
+    return summary
+
+@app.route('/api/query-stream', methods=['POST'])
+def query_stream():
     try:
-        prompts = create_language_aware_prompts(language)
-        
-        # Use Flash model for quick classification
-        gemini_flash = init_model("gemini-1.5-flash")
-        
-        # Get genre classification
-        genre_prompt = prompts["genre_classification"].format(content=result_text[:1000])
-        genre_result = gemini_flash.ask(genre_prompt)
-        
-        # Get period classification  
-        period_prompt = prompts["period_classification"].format(content=result_text[:1000])
-        period_result = gemini_flash.ask(period_prompt)
-        
-        print(f"🏷️ Got classification in {language} - Genre: {genre_result}, Period: {period_result}", flush=True)
-        
-        return {
-            "genre": genre_result.strip(),
-            "period": period_result.strip()
-        }
-        
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'No JSON data provided'}), 400
+        input_data = data.get('inputData', {})
+        language = data.get('language', 'he')
+        text_data = input_data.get('data', '')
+        if not text_data:
+            return jsonify({'error': 'No text data provided'}), 400
     except Exception as e:
-        print(f"⚠️ Classification error: {e}", flush=True)
-        return {
-            "genre": "לא זמין" if language == 'he' else "Not available",
-            "period": "לא זמין" if language == 'he' else "Not available"
-        }
+        logger.error(f"Request parsing error: {e}")
+        return jsonify({'error': 'Invalid request format'}), 400
+    
+    def generate():
+        try:
+            # Step 1: Start with initializing
+            yield f"data: {json.dumps({'type': 'status', 'stage': 'initializing'})}\n\n"
+            time.sleep(0.5)
+            
+            # Step 2: Enhanced analysis with classifier
+            enhanced_analysis = enhanced_content_analysis(text_data)
+            
+            # Step 3: Quick AI preview
+            yield f"data: {json.dumps({'type': 'status', 'stage': 'quick_preview'})}\n\n"
+            
+            quick_prompt = f"""
+            {'בעברית:' if language == 'he' else 'In English:'} 
+            ספק הערכה ראשונית קצרה (2-3 משפטים) של כתובת יתדות זו:
+            
+            ז׳אנר: {enhanced_analysis['genre']}
+            תקופה: {enhanced_analysis['period']}
+            
+            התמקד בסוג הכתובת, התקופה הסבירה, והנושא העיקרי.
+            """
+            
+            quick_result = safe_ai_call("gemini-2.0-flash", quick_prompt, 
+                                      "Quick analysis unavailable. Enhanced classification available below.")
+            
+            yield f"data: {json.dumps({'type': 'quick_preview', 'content': quick_result})}\n\n"
+            
+            # Step 4: Move to analyzing stage
+            yield f"data: {json.dumps({'type': 'status', 'stage': 'analyzing'})}\n\n"
+            time.sleep(0.5)
+            
+            # Step 5: Send classification data
+            classification_data = {
+                'genre': enhanced_analysis['genre'],
+                'period': enhanced_analysis['period'],
+                'language_detected': enhanced_analysis['language'],
+                'content_type': enhanced_analysis['content_type']
+            }
+            yield f"data: {json.dumps({'type': 'classification', **classification_data})}\n\n"
+            
+            # Step 6: Move to processing stage
+            yield f"data: {json.dumps({'type': 'status', 'stage': 'processing'})}\n\n"
+            
+            # Step 7: Deep analysis
+            deep_prompt = create_intelligent_prompt(enhanced_analysis, language)
+            detailed_analysis = safe_ai_call("gemini-2.5-pro-preview-05-06", deep_prompt,
+                                           "Detailed analysis unavailable. Classification provided.")
+            
+            # Step 8: Finalizing
+            yield f"data: {json.dumps({'type': 'status', 'stage': 'finalizing'})}\n\n"
+            time.sleep(0.3)
+            
+            classification_summary = create_classification_summary(enhanced_analysis, language)
+            
+            final_results = {
+                'summary': quick_result,
+                'language': language,
+                'preprocessing': {
+                    'status': 'success',
+                    'preview': quick_result,
+                    'language': language,
+                    'classifier_used': True
+                },
+                'tabs': [
+                    {
+                        'name': 'Detailed Analysis' if language == 'en' else 'ניתוח מפורט',
+                        'content': detailed_analysis
+                    },
+                    {
+                        'name': 'Advanced Classification' if language == 'en' else 'סיווג מתקדם',
+                        'content': classification_summary
+                    },
+                    {
+                        'name': 'Cuneiform Words' if language == 'en' else 'מילים בכתב יתדות',
+                        'content': f"{'Identified cuneiform terms:' if language == 'en' else 'מונחים בכתב יתדות שזוהו:'}\n\n" + 
+                                 "\n".join([f"• {word}" for word in enhanced_analysis['cuneiform_words'][:20]]) if enhanced_analysis['cuneiform_words'] 
+                                 else ('No cuneiform words identified in this text.' if language == 'en' else 'לא זוהו מילים בכתב יתדות בטקסט זה.')
+                    },
+                    {
+                        'name': 'Technical Details' if language == 'en' else 'פרטים טכניים',
+                        'content': f"AI Status: {'Available' if app_state.is_gemini_available() else 'Limited'}\n"
+                                 f"Classifier: {'Available' if app_state.get_status()['classifier_available'] else 'Limited'}\n"
+                                 f"Processed: {len(text_data)} characters\n"
+                                 f"Language: {language}\n"
+                                 f"Models: {', '.join(app_state.gemini_models.keys())}\n"
+                                 f"XML Content: {'Yes' if enhanced_analysis['xml_content'] else 'No'}"
+                    }
+                ]
+            }
+            
+            yield f"data: {json.dumps({'type': 'final_results', 'results': final_results})}\n\n"
+            yield f"data: {json.dumps({'type': 'complete'})}\n\n"
+            
+        except Exception as e:
+            logger.error(f"Stream generation error: {e}")
+            error_msg = f"Analysis error: {str(e)}"
+            yield f"data: {json.dumps({'type': 'error', 'message': error_msg})}\n\n"
+    
+    return Response(generate(), 
+                   content_type='text/plain; charset=utf-8',
+                   headers={
+                       'Cache-Control': 'no-cache',
+                       'Connection': 'keep-alive',
+                       'Access-Control-Allow-Origin': '*'
+                   })
 
-@app.route("/api/query", methods=['POST']) 
+@app.route('/api/query', methods=['POST'])
 def query():
-    """Enhanced main API endpoint with IMMEDIATE quick preview and correct classification"""
-    
-    # Generate unique request ID for tracking
-    import uuid
-    request_id = str(uuid.uuid4())
-    active_requests[request_id] = True
-    
     try:
-        data = request
-        print(f"🔍 [{request_id}] Received request: {data}", flush=True)
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'No JSON data provided'}), 400
+        input_data = data.get('inputData', {})
+        language = data.get('language', 'he')
+        text_data = input_data.get('data', '')
         
-        data_json = data.get_json(silent=True)
-        if not data_json:
-            return jsonify({"error": "Invalid or missing JSON"}), 400
+        if not text_data:
+            return jsonify({'error': 'No text data provided'}), 400
         
-        input_data = data_json['inputData']
+        enhanced_analysis = enhanced_content_analysis(text_data)
+        analysis_prompt = create_intelligent_prompt(enhanced_analysis, language)
+        analysis = safe_ai_call("gemini-2.0-flash", analysis_prompt, 
+                              f"Classification: {enhanced_analysis['genre']} from {enhanced_analysis['period']}")
         
-        # Extract language preference (default to Hebrew)
-        language = data_json.get('language', 'he')
-        preferences = data_json.get('preferences', {})
-        output_language = preferences.get('outputLanguage', language)
+        classification_summary = create_classification_summary(enhanced_analysis, language)
         
-        print(f"📄 [{request_id}] Processing in language: {output_language}", flush=True)
-        print(f"📄 [{request_id}] Input data received: {input_data}", flush=True)
-        
-        data_type = input_data.get('type', '')
-        print(f"📋 [{request_id}] Data type: {data_type}", flush=True)
-        
-        # Check if request was cancelled
-        if request_id not in active_requests or not active_requests[request_id]:
-            print(f"🚫 [{request_id}] Request cancelled early", flush=True)
-            return jsonify({"error": "Request cancelled"}), 499
-        
-        # Extract text content based on type
-        if data_type == 'text':
-            text = input_data.get('data', '')
-            if not text or not isinstance(text, str):
-                error_msg = "אין טקסט להעביר" if output_language == 'he' else "No text provided"
-                return jsonify({"error": error_msg}), 400
-            print(f"📝 [{request_id}] Processing text input: {text[:100]}...", flush=True)
-            
-        elif data_type == 'file' or data_type == 'camera':
-            text = input_data.get('data', '')
-            file_name = input_data.get('fileName', 'unknown_file')
-            
-            print(f"📁 [{request_id}] Processing file: {file_name}", flush=True)
-            print(f"📏 [{request_id}] File content length: {len(text) if text else 0}", flush=True)
-            
-            if not text or not isinstance(text, str) or len(text.strip()) == 0:
-                empty_msg = (
-                    f"הקובץ '{file_name}' ריק או לא ניתן לקריאה" 
-                    if output_language == 'he' 
-                    else f"File '{file_name}' is empty or unreadable"
-                )
-                error_content = (
-                    f"הקובץ '{file_name}' אינו מכיל טקסט הניתן לעיבוד"
-                    if output_language == 'he'
-                    else f"File '{file_name}' does not contain processable text"
-                )
-                return jsonify({
-                    "summary": empty_msg,
-                    "tabs": [
-                        {"name": "שגיאה" if output_language == 'he' else "Error", "content": error_content}
-                    ]
-                })
-            
-            print(f"👁️ [{request_id}] File content preview: {text[:200]}...", flush=True)
-            
-        else:
-            error_msg = f"סוג קלט לא ידוע: {data_type}" if output_language == 'he' else f"Unknown input type: {data_type}"
-            return jsonify({"error": error_msg}), 400
-        
-        print(f"✅ [{request_id}] Final text for processing: {text[:100]}...", flush=True)
-        
-        # Check cancellation before IMMEDIATE preview
-        if request_id not in active_requests or not active_requests[request_id]:
-            print(f"🚫 [{request_id}] Request cancelled before immediate preview", flush=True)
-            return jsonify({"error": "Request cancelled"}), 499
-        
-        # STEP 1: IMMEDIATE QUICK PREVIEW - runs FIRST
-        immediate_preview_result = None
-        try:
-            print(f"⚡ [{request_id}] Starting IMMEDIATE quick preview in {output_language}...", flush=True)
-            immediate_preview_result = immediate_quick_preview(text, data_type, output_language)
-            print(f"✨ [{request_id}] IMMEDIATE preview completed: {immediate_preview_result}", flush=True)
-        except Exception as e:
-            print(f"⚠️ [{request_id}] IMMEDIATE preview failed: {e}", flush=True)
-            immediate_preview_result = {
-                "status": "error",
-                "preview": "מתחיל עיבוד..." if output_language == 'he' else "Starting processing...",
-                "language": output_language
-            }
-        
-        # Check cancellation before main processing
-        if request_id not in active_requests or not active_requests[request_id]:
-            print(f"🚫 [{request_id}] Request cancelled before main processing", flush=True)
-            return jsonify({"error": "Request cancelled"}), 499
-        
-        # STEP 2: Continue with main processing pipeline
-        try:
-            print(f"🔄 [{request_id}] Starting main analysis pipeline...", flush=True)
-            result = generate(text, data_type)
-            print(f"📊 [{request_id}] Analysis result: {result}", flush=True)
-            print(f"🔍 [{request_id}] Result type: {type(result)}", flush=True)
-        except Exception as e:
-            print(f"❌ [{request_id}] Error in main analysis: {e}", flush=True)
-            error_msg = f"שגיאה בעיבוד: {str(e)}" if output_language == 'he' else f"Processing error: {str(e)}"
-            return jsonify({"error": error_msg}), 500
-        
-        # Check cancellation before classification
-        if request_id not in active_requests or not active_requests[request_id]:
-            print(f"🚫 [{request_id}] Request cancelled before classification", flush=True)
-            return jsonify({"error": "Request cancelled"}), 499
-        
-        # Extract structured text from analysis result
-        result_text = ""
-        if hasattr(result, 'Text'):
-            result_text = result.Text
-        elif hasattr(result, 'text'):
-            result_text = result.text
-        elif isinstance(result, dict) and 'Text' in result:
-            result_text = result['Text']
-        elif isinstance(result, dict) and 'text' in result:
-            result_text = result['text']
-        else:
-            print(f"⚠️ [{request_id}] Warning: Could not find text field in result: {type(result)}", flush=True)
-            result_text = str(result)
-        
-        print(f"📄 [{request_id}] Extracted text for further processing: {result_text[:200]}...", flush=True)
-        
-        # STEP 3: Get language-aware classification
-        try:
-            print(f"🏷️ [{request_id}] Getting classification in {output_language}...", flush=True)
-            classification = get_language_aware_classification(result_text, output_language)
-            print(f"📋 [{request_id}] Classification completed: {classification}", flush=True)
-        except Exception as e:
-            print(f"⚠️ [{request_id}] Classification failed: {e}", flush=True)
-            classification = {
-                "genre": "לא זמין" if output_language == 'he' else "Not available",
-                "period": "לא זמין" if output_language == 'he' else "Not available"
-            }
-        
-        # Check cancellation before Gemini processing
-        if request_id not in active_requests or not active_requests[request_id]:
-            print(f"🚫 [{request_id}] Request cancelled before Gemini processing", flush=True)
-            return jsonify({"error": "Request cancelled"}), 499
-        
-        # STEP 4: Create language-aware specialized prompts for deep analysis
-        prompts = create_language_aware_prompts(output_language)
-        
-        if data_type in ['file', 'camera']:
-            file_name = input_data.get('fileName', 'unknown_file')
-            short_prompt = prompts["short_summary"].format(content=result_text)
-            long_prompt = prompts["detailed_analysis"].format(content=result_text)
-        else:
-            short_prompt = prompts["short_summary"].format(content=result_text)
-            long_prompt = prompts["detailed_analysis"].format(content=result_text)
-        
-        # Check cancellation before Gemini models
-        if request_id not in active_requests or not active_requests[request_id]:
-            print(f"🚫 [{request_id}] Request cancelled before Gemini models", flush=True)
-            return jsonify({"error": "Request cancelled"}), 499
-        
-        # STEP 5: Initialize advanced models for comprehensive analysis
-        try:
-            print(f"🤖 [{request_id}] Initializing Gemini models for deep analysis in {output_language}...", flush=True)
-            
-            gemini_flash = init_model("gemini-1.5-flash")
-            text_content_short = gemini_flash.ask(short_prompt)
-            print(f"📝 [{request_id}] Short analysis completed in {output_language}: {text_content_short[:100]}...", flush=True)
-            
-            # Check cancellation between model calls
-            if request_id not in active_requests or not active_requests[request_id]:
-                print(f"🚫 [{request_id}] Request cancelled between model calls", flush=True)
-                return jsonify({"error": "Request cancelled"}), 499
-            
-            gemini_pro = init_model("gemini-1.5-pro")
-            text_content_long = gemini_pro.ask(long_prompt)
-            print(f"📚 [{request_id}] Detailed analysis completed in {output_language}: {text_content_long[:100]}...", flush=True)
-            
-        except Exception as e:
-            print(f"⚠️ [{request_id}] Error with advanced Gemini models: {e}", flush=True)
-            # Language-aware fallback
-            if output_language == 'he':
-                text_content_short = "סיכום זמין"
-                text_content_long = "ניתוח מפורט זמין"
-            else:
-                text_content_short = "Summary available"
-                text_content_long = "Detailed analysis available"
-        
-        # Final cancellation check
-        if request_id not in active_requests or not active_requests[request_id]:
-            print(f"🚫 [{request_id}] Request cancelled before response", flush=True)
-            return jsonify({"error": "Request cancelled"}), 499
-        
-        # STEP 6: Build comprehensive response with language support
-        tab_names = {
-            'he': {
-                'genre': 'נושא',
-                'period': 'תקופה', 
-                'content': 'תוכן'
+        return jsonify({
+            'summary': analysis,
+            'language': language,
+            'classification': {
+                'genre': enhanced_analysis['genre'],
+                'period': enhanced_analysis['period'],
+                'language_detected': enhanced_analysis['language']
             },
-            'en': {
-                'genre': 'Subject',
-                'period': 'Period',
-                'content': 'Content'
-            }
-        }
-        
-        current_tab_names = tab_names.get(output_language, tab_names['he'])
-        
-        response_data = {
-            "summary": text_content_short,
-            "language": output_language,
-            "tabs": [
-                {
-                    "name": current_tab_names['genre'], 
-                    "content": classification["genre"]
-                },
-                {
-                    "name": current_tab_names['period'], 
-                    "content": classification["period"]
-                },
-                {
-                    "name": current_tab_names['content'], 
-                    "content": text_content_long
-                }
+            'tabs': [
+                {'name': 'Analysis', 'content': analysis},
+                {'name': 'Classification', 'content': classification_summary},
+                {'name': 'Cuneiform Words', 'content': "\n".join([f"• {word}" for word in enhanced_analysis['cuneiform_words'][:10]]) if enhanced_analysis['cuneiform_words'] else 'No words identified'},
+                {'name': 'Status', 'content': f"AI: {'Available' if app_state.is_gemini_available() else 'Limited'}\nClassifier: {'Available' if CLASSIFIER_AVAILABLE else 'Limited'}\nProcessed: {len(text_data)} characters"}
             ]
-        }
-        
-        # Include IMMEDIATE preview results
-        if immediate_preview_result and immediate_preview_result.get("status") == "success":
-            response_data["preprocessing"] = immediate_preview_result
-            print(f"✅ [{request_id}] Including IMMEDIATE preview in response: {immediate_preview_result['preview'][:50]}...", flush=True)
-        elif immediate_preview_result and immediate_preview_result.get("status") == "partial":
-            response_data["preprocessing"] = immediate_preview_result
-            print(f"⚠️ [{request_id}] Including partial preview in response", flush=True)
-        
-        print(f"📤 [{request_id}] Final response prepared in {output_language}: {response_data}", flush=True)
-        
-        return jsonify(response_data)
+        })
         
     except Exception as e:
-        print(f"💥 [{request_id}] Unexpected error: {e}", flush=True)
-        error_msg = f"שגיאה לא צפויה: {str(e)}" if 'he' in str(request.headers.get('Accept-Language', 'he')) else f"Unexpected error: {str(e)}"
-        return jsonify({"error": error_msg}), 500
+        logger.error(f"Query endpoint error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/health', methods=['GET'])
+def health():
+    status = app_state.get_status()
+    return jsonify({
+        'status': 'healthy' if status['gemini_available'] else 'degraded',
+        'gemini_available': status['gemini_available'],
+        'classifier_available': status['classifier_available'],
+        'ai_type': 'Gemini API + Advanced Classifier System',
+        'loaded_models': status['loaded_models'],
+        'last_error': status['last_error'],
+        'timestamp': time.time()
+    })
+
+@app.route('/api/test-models', methods=['GET'])
+def test_models():
+    results = {}
+    models_to_test = ["gemini-2.0-flash", "gemini-2.5-pro-preview-05-06"]
+    
+    for model_name in models_to_test:
+        try:
+            model = app_state.get_gemini_model(model_name)
+            test_result = model.ask("Say 'Hello from " + model_name + "'", short_answer=True)
+            results[model_name] = {'status': 'success', 'response': test_result}
+        except Exception as e:
+            results[model_name] = {'status': 'error', 'error': str(e)}
+    
+    try:
+        genre_classifier = GenreClassifier()
+        period_classifier = PeriodClassifier()
         
-    finally:
-        # Cleanup request tracking
-        if request_id in active_requests:
-            del active_requests[request_id]
-        print(f"🧹 [{request_id}] Request cleanup completed", flush=True)
-
-@app.route("/api/cancel/<request_id>", methods=['POST'])
-def cancel_request(request_id):
-    """Cancel a specific request"""
-    if request_id in active_requests:
-        active_requests[request_id] = False
-        print(f"🚫 Request {request_id} marked for cancellation", flush=True)
-        return jsonify({"status": "cancelled"})
-    else:
-        return jsonify({"status": "not_found"}), 404
-
-@app.route("/api/health", methods=['GET'])
-def health_check():
-    """Health check endpoint"""
-    return jsonify({
-        "status": "healthy",
-        "active_requests": len(active_requests),
-        "server": "Epigraph-AI Backend v2.1 - Early Preview Edition"
-    })
-
-@app.route("/", methods=['GET'])
-def home():
-    """Root endpoint"""
-    return jsonify({
-        "message": "Epigraph-AI API is running",
-        "version": "2.1",
-        "endpoints": {
-            "query": "/api/query",
-            "health": "/api/health",
-            "cancel": "/api/cancel/<request_id>"
+        test_text = "gur še barley silver"
+        genre_result = genre_classifier.classify(test_text)
+        period_result = period_classifier.classify(test_text)
+        
+        results['classifier'] = {
+            'status': 'success',
+            'genre_test': genre_result,
+            'period_test': period_result
         }
+    except Exception as e:
+        results['classifier'] = {'status': 'error', 'error': str(e)}
+    
+    return jsonify({
+        'overall_status': app_state.is_gemini_available(),
+        'classifier_available': CLASSIFIER_AVAILABLE,
+        'model_tests': results
     })
+
+@app.route('/api/test-classifier', methods=['POST'])
+def test_classifier():
+    try:
+        data = request.get_json()
+        test_text = data.get('text', 'gur še barley silver mu us₂-sa')
+        
+        enhanced = enhanced_content_analysis(test_text)
+        
+        return jsonify({
+            'status': 'success',
+            'input_text': test_text,
+            'enhanced_analysis': {
+                'genre': enhanced['genre'],
+                'period': enhanced['period'],
+                'language': enhanced['language'],
+                'content_type': enhanced['content_type'],
+                'cuneiform_words_count': len(enhanced['cuneiform_words']),
+                'economic_terms_count': len(enhanced['economic_terms']),
+                'xml_content': enhanced['xml_content']
+            },
+            'classifier_available': CLASSIFIER_AVAILABLE
+        })
+        
+    except Exception as e:
+        logger.error(f"Classifier test error: {e}")
+        return jsonify({
+            'status': 'error',
+            'error': str(e),
+            'classifier_available': CLASSIFIER_AVAILABLE
+        }), 500
 
 if __name__ == '__main__':
-    print("🚀 Starting Enhanced Epigraph-AI server with IMMEDIATE preview...")
-    print("📍 Server will run on http://127.0.0.1:5328")
-    print("🌐 Language support: Hebrew (default) + English")
-    print("🚫 Cancellation support: Enabled")
-    print("⚡ IMMEDIATE Quick Preview: Enabled")
-    app.run(debug=True, port=5328)
+    logger.info("🚀 Starting Epigraph-AI server...")
+    logger.info(f"🤖 AI Status: Initializing...")
+    logger.info(f"📚 Classifier Status: {'Available' if CLASSIFIER_AVAILABLE else 'Fallback mode'}")
+    app.run(debug=True, port=5328, host='127.0.0.1')

@@ -1,6 +1,6 @@
 # api/Classifier/controller.py
 
-from classifier import GenreClassifier, PeriodClassifier
+from .classifier import GenreClassifier, PeriodClassifier
 import re
 import xml.etree.ElementTree as ET
 

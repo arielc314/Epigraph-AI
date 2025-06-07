@@ -8,7 +8,7 @@ class Gemini:
     Just call init_model() with your preferred model and use ask()
     """
 
-    _SERVICE_ACCOUNT_FILE_PATH = "./api/ai/cardentials.json"
+    _SERVICE_ACCOUNT_FILE_PATH = "./api/ai/credentials.json"
 
     # Available models with descriptions
     AVAILABLE_MODELS = {
