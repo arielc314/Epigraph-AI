@@ -1,4 +1,3 @@
-# api/index.py - COMPLETE FIXED VERSION
 from flask import Flask, request, jsonify, Response
 from flask_cors import CORS
 import json
@@ -9,11 +8,10 @@ import os
 import base64
 
 def safe_json_text(text):
-    if not text:
-        return text
-    # תיקון Unicode בעייתי
-    text = text.replace('\\u', '\\\\u')
-    text = text.replace('\x00', '')
+    if text:
+        # fixing problematic Unicode
+        text = text.replace('\\u', '\\\\u')
+        text = text.replace('\x00', '')
     return text
 
 creds_b64 = os.getenv("GOOGLE_CREDENTIALS_B64")
@@ -54,7 +52,6 @@ try:
     from Classifier.controller import (
         extract_transliteration, 
         analyze_cuneiform_text, 
-        create_structured_summary,
         TransliterationResult
     )
     logger.info("✅ Successfully imported classifier components")

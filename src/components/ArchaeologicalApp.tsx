@@ -77,7 +77,7 @@ const ArchaeologicalAppInner: React.FC = () => {
 
     processingRef.current = true;
     setCurrentPage('loading');
-    
+
     try {
       // Reset loading state
       setLoadingData({ 
@@ -100,6 +100,7 @@ const ArchaeologicalAppInner: React.FC = () => {
       console.log(`[${language.toUpperCase()}] Starting streaming analysis...`);
       console.log('processingRef.current:', processingRef.current);
       
+
       // Create streaming request
       const sseResponse = await fetch(`${process.env.NEXT_PUBLIC_API_BASE}/api/query-stream`, {
         method: 'POST',
@@ -241,7 +242,7 @@ const ArchaeologicalAppInner: React.FC = () => {
           method: 'POST',
           headers: { 
             'Content-Type': 'application/json',
-            'Accept-Language': language
+            'Accept-Language': language,
           },
           body: JSON.stringify(fallbackPayload)
         });
