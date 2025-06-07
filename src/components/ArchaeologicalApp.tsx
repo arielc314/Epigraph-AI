@@ -74,7 +74,7 @@ const ArchaeologicalAppInner: React.FC = () => {
     // Create new abort controller
     abortControllerRef.current = new AbortController();
     const signal = abortControllerRef.current.signal;
-    
+
     processingRef.current = true;
     setCurrentPage('loading');
     
@@ -105,7 +105,7 @@ const ArchaeologicalAppInner: React.FC = () => {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          'Accept-Language': language
+          'Accept-Language': language,
         },
         body: JSON.stringify(requestPayload),
         signal: signal

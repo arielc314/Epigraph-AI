@@ -8,6 +8,14 @@ import sys
 import os
 import base64
 
+def safe_json_text(text):
+    if not text:
+        return text
+    # תיקון Unicode בעייתי
+    text = text.replace('\\u', '\\\\u')
+    text = text.replace('\x00', '')
+    return text
+
 creds_b64 = os.getenv("GOOGLE_CREDENTIALS_B64")
 if creds_b64:
     creds_json = base64.b64decode(creds_b64).decode("utf-8")
@@ -33,7 +41,7 @@ sys.path.insert(0, classifier_path)
 
 # Import Gemini
 try:
-    from gemini import Gemini
+    from gemini import Gemini # type: ignore
     logger.info("✅ Successfully imported Gemini")
 except ImportError as e:
     logger.error(f"❌ Failed to import Gemini: {e}")
@@ -212,6 +220,7 @@ def safe_ai_call(model_name, prompt, fallback_message="Analysis unavailable"):
     try:
         model = app_state.get_gemini_model(model_name)
         result = model.ask(prompt, short_answer=False)
+        if result: result = safe_json_text(result)
         return result if result else fallback_message
     except Exception as e:
         logger.error(f"AI call failed for {model_name}: {e}")
