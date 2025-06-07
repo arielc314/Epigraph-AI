@@ -10,6 +10,10 @@ class Gemini:
     Just call init_model() with your preferred model and use ask()
     """
 
+    # Environment variable holding the JSON service account
+    _ENV_VAR = "GOOGLE_SERVICE_ACCOUNT_JSON"
+
+
     # Available models with descriptions
     AVAILABLE_MODELS = {
         "gemini-1.5-flash": "Fast and versatile (recommended for beginners)",
@@ -50,21 +54,20 @@ class Gemini:
 
             print(f"🚀 Initializing model: {model_name}...")
 
-            # Configure Google AI API
-            if not self._SERVICE_ACCOUNT_FILE_PATH:
-                raise ValueError("Service account file path is not set. Please set Gemini._SERVICE_ACCOUNT_FILE_PATH or ensure it has a default value.")
+            # Load credentials from environment variable
+            creds_json = os.environ.get(self._ENV_VAR)
+            if not creds_json:
+                raise ValueError(f"Environment variable '{self._ENV_VAR}' not found.")
 
             try:
-                service_account_info = json.loads(os.environ["GOOGLE_SERVICE_ACCOUNT_JSON"])
+                service_account_info = json.loads(creds_json)
                 credentials = service_account.Credentials.from_service_account_info(service_account_info)
-            except FileNotFoundError:
-                raise FileNotFoundError(f"Service account file not found at: {self._SERVICE_ACCOUNT_FILE_PATH}. Please check the path.")
             except Exception as e:
-                raise Exception(f"Failed to load credentials from {self._SERVICE_ACCOUNT_FILE_PATH}: {e}")
+                raise Exception(f"Invalid credentials JSON in '{self._ENV_VAR}': {e}")
 
             genai.configure(credentials=credentials)
 
-            # Create model and chat session
+            # Instantiate the model and chat
             self.model = genai.GenerativeModel(model_name)
             self.chat = self.model.start_chat()
             self.model_name = model_name
@@ -118,7 +121,6 @@ class Gemini:
         """Get list of available models with descriptions"""
         return self.AVAILABLE_MODELS.copy()
 
-    # ========== PRIVATE METHODS (HIDDEN FROM STUDENTS) ==========
 
     def _select_model(self):
         """Interactive model selection (hidden implementation)"""
